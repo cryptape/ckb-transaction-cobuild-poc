@@ -18,4 +18,4 @@ install:
 
 ci:
 	capsule build --release
-	cargo test -p tests
+	cd tests && cargo test && cd ..
