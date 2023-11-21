@@ -1,5 +1,5 @@
 [workspace]
-members = ["contracts/ckb-typed-message", "contracts/typed-message-lock-demo", "tests"]
+members = ["ckb-typed-message", "contracts/typed-message-lock-demo", "tests"]
 
 [profile.release]
 overflow-checks = true

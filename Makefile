@@ -1,10 +1,11 @@
 
 
 all:
-	capsule build
+	capsule build --release
 
 mol:
-	moleculec --language rust --schema-file schemas/basic.mol > contracts/ckb-typed-message/src/schemas/basic.rs
+	moleculec --language rust --schema-file schemas/basic.mol > ckb-typed-message/src/schemas/basic.rs
+	moleculec --language rust --schema-file schemas/top_level.mol > ckb-typed-message/src/schemas/top_level.rs
 	cargo fmt
 
 install:
@@ -16,5 +17,5 @@ install:
 	cargo install moleculec@0.7.5 --locked
 
 ci:
-	capsule build
+	capsule build --release
 	cargo test -p tests

@@ -1,67 +1,18 @@
-array Bool [byte; 1];
+import blockchain;
 
-array Uint32 [byte; 4];
-array Uint64 [byte; 8];
-
-array Byte32 [byte; 32];
-
-vector FixedBytes <byte>;
-vector Uint <byte>;
-vector Int <byte>;
-vector Bytes <byte>;
 vector String <byte>;
-array Address [byte; 20];
 
-struct RefCell {
-    source: Uint64,
-    index: Uint32,
-    offset: Uint32,
+union Address {
+    Script,
 }
 
-struct RefTransaction {
-    offset: Uint32,
-}
-
-union Hash {
-    Byte32,
-    RefCell,
-    RefTransaction,
-}
-
-// Ideally, we want to keep a vector of Value types here, but molecule
-// does not yet support recursive types. For now we are settled with a
-// vector of Bytes items, where each Bytes item is Value serialized in
-// molecule formats.
-vector SerializedValues <Bytes>;
-
-table Struct {
-    type_hash: Hash,
-    values: SerializedValues,
-}
-
-table Array {
-    values: SerializedValues,
-}
-
-union Value {
-    Struct,
-    Array,
-    Bool,
-    Bytes,
-    String,
-    Address,
-    FixedBytes,
-    Int,
-    Uint,
-}
-
-table EIP712 {
-    domain_separator: Hash,
-    message: Struct,
+table MoleculeData {
+    info_hash: Byte32,
+    data: Bytes,
 }
 
 union TypedMessage {
-    EIP712,
+    MoleculeData,
 }
 
 table SighashWithAction {
@@ -71,6 +22,35 @@ table SighashWithAction {
 
 table Sighash {
     lock: Bytes,
+}
+
+table DappInfoV1 {
+    name: String,
+    url: String,
+    script_hash: Byte32,
+    schema: String,
+    message_type: String,
+}
+
+union DappInfo {
+    DappInfoV1,
+}
+
+vector DappInfos <DappInfo>;
+
+union Scratch {
+    MoleculeData,
+}
+
+option ScratchOpt (Scratch);
+
+table SigningAction {
+    flags: Uint64,
+    address: Address,
+    message: TypedMessage,
+    skeleton_hash: Byte32,
+    infos: DappInfos,
+    scratch: ScratchOpt,
 }
 
 table OtxStart {

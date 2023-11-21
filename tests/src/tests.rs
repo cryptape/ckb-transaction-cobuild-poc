@@ -22,7 +22,7 @@ fn assert_script_error(err: Error, err_code: i8) {
 fn test_success() {
     // deploy contract
     let mut context = Context::default();
-    let contract_bin: Bytes = Loader::default().load_binary("ckb-typed-message");
+    let contract_bin: Bytes = Loader::default().load_binary("typed-message-lock-demo");
     let out_point = context.deploy_cell(contract_bin);
 
     // prepare scripts
@@ -73,7 +73,7 @@ fn test_success() {
 fn test_empty_args() {
     // deploy contract
     let mut context = Context::default();
-    let contract_bin: Bytes = Loader::default().load_binary("ckb-typed-message");
+    let contract_bin: Bytes = Loader::default().load_binary("typed-message-lock-demo");
     let out_point = context.deploy_cell(contract_bin);
 
     // prepare scripts

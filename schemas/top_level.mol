@@ -1,8 +1,5 @@
 import basic;
 
-// Due to the fact that lumos' molecule parser does not yet support
-// custom union ID, we have to put this in a separate file, then use
-// lumos' codec functionality to define this type manually.
 union ExtendedWitness {
     SighashWithAction: 4278190081,
     Sighash: 4278190082,

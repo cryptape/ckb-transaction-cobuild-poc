@@ -9,9 +9,5 @@ version = "0.10.2 5e49142"
 deployment = "deployment.toml"
 
 [[contracts]]
-name = "ckb-typed-message"
-template_type = "Rust"
-
-[[contracts]]
 name = "typed-message-lock-demo"
 template_type = "Rust"
