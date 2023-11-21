@@ -1,0 +1,90 @@
+array Bool [byte; 1];
+
+array Uint32 [byte; 4];
+array Uint64 [byte; 8];
+
+array Byte32 [byte; 32];
+
+vector FixedBytes <byte>;
+vector Uint <byte>;
+vector Int <byte>;
+vector Bytes <byte>;
+vector String <byte>;
+array Address [byte; 20];
+
+struct RefCell {
+    source: Uint64,
+    index: Uint32,
+    offset: Uint32,
+}
+
+struct RefTransaction {
+    offset: Uint32,
+}
+
+union Hash {
+    Byte32,
+    RefCell,
+    RefTransaction,
+}
+
+// Ideally, we want to keep a vector of Value types here, but molecule
+// does not yet support recursive types. For now we are settled with a
+// vector of Bytes items, where each Bytes item is Value serialized in
+// molecule formats.
+vector SerializedValues <Bytes>;
+
+table Struct {
+    type_hash: Hash,
+    values: SerializedValues,
+}
+
+table Array {
+    values: SerializedValues,
+}
+
+union Value {
+    Struct,
+    Array,
+    Bool,
+    Bytes,
+    String,
+    Address,
+    FixedBytes,
+    Int,
+    Uint,
+}
+
+table EIP712 {
+    domain_separator: Hash,
+    message: Struct,
+}
+
+union TypedMessage {
+    EIP712,
+}
+
+table SighashWithAction {
+    lock: Bytes,
+    message: TypedMessage,
+}
+
+table Sighash {
+    lock: Bytes,
+}
+
+table OtxStart {
+    start_input_cell: Uint32,
+    start_output_cell: Uint32,
+    start_cell_deps: Uint32,
+    start_header_deps: Uint32,
+}
+
+table Otx {
+    lock: Bytes,
+    input_cells: Uint32,
+    output_cells: Uint32,
+    cell_deps: Uint32,
+    header_deps: Uint32,
+    message: TypedMessage,
+}
