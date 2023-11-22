@@ -513,8 +513,8 @@ impl<'r> AddressUnionReader<'r> {
     }
 }
 #[derive(Clone)]
-pub struct MoleculeData(molecule::bytes::Bytes);
-impl ::core::fmt::LowerHex for MoleculeData {
+pub struct Action(molecule::bytes::Bytes);
+impl ::core::fmt::LowerHex for Action {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         use molecule::hex_string;
         if f.alternate() {
@@ -523,16 +523,16 @@ impl ::core::fmt::LowerHex for MoleculeData {
         write!(f, "{}", hex_string(self.as_slice()))
     }
 }
-impl ::core::fmt::Debug for MoleculeData {
+impl ::core::fmt::Debug for Action {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "{}({:#x})", Self::NAME, self)
     }
 }
-impl ::core::fmt::Display for MoleculeData {
+impl ::core::fmt::Display for Action {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "{} {{ ", Self::NAME)?;
         write!(f, "{}: {}", "info_hash", self.info_hash())?;
-        write!(f, ", {}: {}", "data", self.data())?;
+        write!(f, ", {}: {}", "bytes", self.bytes())?;
         let extra_count = self.count_extra_fields();
         if extra_count != 0 {
             write!(f, ", .. ({} fields)", extra_count)?;
@@ -540,13 +540,13 @@ impl ::core::fmt::Display for MoleculeData {
         write!(f, " }}")
     }
 }
-impl ::core::default::Default for MoleculeData {
+impl ::core::default::Default for Action {
     fn default() -> Self {
         let v = molecule::bytes::Bytes::from_static(&Self::DEFAULT_VALUE);
-        MoleculeData::new_unchecked(v)
+        Action::new_unchecked(v)
     }
 }
-impl MoleculeData {
+impl Action {
     const DEFAULT_VALUE: [u8; 48] = [
         48, 0, 0, 0, 12, 0, 0, 0, 44, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -574,7 +574,7 @@ impl MoleculeData {
         let end = molecule::unpack_number(&slice[8..]) as usize;
         Byte32::new_unchecked(self.0.slice(start..end))
     }
-    pub fn data(&self) -> Bytes {
+    pub fn bytes(&self) -> Bytes {
         let slice = self.as_slice();
         let start = molecule::unpack_number(&slice[8..]) as usize;
         if self.has_extra_fields() {
@@ -584,15 +584,15 @@ impl MoleculeData {
             Bytes::new_unchecked(self.0.slice(start..))
         }
     }
-    pub fn as_reader<'r>(&'r self) -> MoleculeDataReader<'r> {
-        MoleculeDataReader::new_unchecked(self.as_slice())
+    pub fn as_reader<'r>(&'r self) -> ActionReader<'r> {
+        ActionReader::new_unchecked(self.as_slice())
     }
 }
-impl molecule::prelude::Entity for MoleculeData {
-    type Builder = MoleculeDataBuilder;
-    const NAME: &'static str = "MoleculeData";
+impl molecule::prelude::Entity for Action {
+    type Builder = ActionBuilder;
+    const NAME: &'static str = "Action";
     fn new_unchecked(data: molecule::bytes::Bytes) -> Self {
-        MoleculeData(data)
+        Action(data)
     }
     fn as_bytes(&self) -> molecule::bytes::Bytes {
         self.0.clone()
@@ -601,10 +601,10 @@ impl molecule::prelude::Entity for MoleculeData {
         &self.0[..]
     }
     fn from_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
-        MoleculeDataReader::from_slice(slice).map(|reader| reader.to_entity())
+        ActionReader::from_slice(slice).map(|reader| reader.to_entity())
     }
     fn from_compatible_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
-        MoleculeDataReader::from_compatible_slice(slice).map(|reader| reader.to_entity())
+        ActionReader::from_compatible_slice(slice).map(|reader| reader.to_entity())
     }
     fn new_builder() -> Self::Builder {
         ::core::default::Default::default()
@@ -612,12 +612,12 @@ impl molecule::prelude::Entity for MoleculeData {
     fn as_builder(self) -> Self::Builder {
         Self::new_builder()
             .info_hash(self.info_hash())
-            .data(self.data())
+            .bytes(self.bytes())
     }
 }
 #[derive(Clone, Copy)]
-pub struct MoleculeDataReader<'r>(&'r [u8]);
-impl<'r> ::core::fmt::LowerHex for MoleculeDataReader<'r> {
+pub struct ActionReader<'r>(&'r [u8]);
+impl<'r> ::core::fmt::LowerHex for ActionReader<'r> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         use molecule::hex_string;
         if f.alternate() {
@@ -626,16 +626,16 @@ impl<'r> ::core::fmt::LowerHex for MoleculeDataReader<'r> {
         write!(f, "{}", hex_string(self.as_slice()))
     }
 }
-impl<'r> ::core::fmt::Debug for MoleculeDataReader<'r> {
+impl<'r> ::core::fmt::Debug for ActionReader<'r> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "{}({:#x})", Self::NAME, self)
     }
 }
-impl<'r> ::core::fmt::Display for MoleculeDataReader<'r> {
+impl<'r> ::core::fmt::Display for ActionReader<'r> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "{} {{ ", Self::NAME)?;
         write!(f, "{}: {}", "info_hash", self.info_hash())?;
-        write!(f, ", {}: {}", "data", self.data())?;
+        write!(f, ", {}: {}", "bytes", self.bytes())?;
         let extra_count = self.count_extra_fields();
         if extra_count != 0 {
             write!(f, ", .. ({} fields)", extra_count)?;
@@ -643,7 +643,7 @@ impl<'r> ::core::fmt::Display for MoleculeDataReader<'r> {
         write!(f, " }}")
     }
 }
-impl<'r> MoleculeDataReader<'r> {
+impl<'r> ActionReader<'r> {
     pub const FIELD_COUNT: usize = 2;
     pub fn total_size(&self) -> usize {
         molecule::unpack_number(self.as_slice()) as usize
@@ -667,7 +667,7 @@ impl<'r> MoleculeDataReader<'r> {
         let end = molecule::unpack_number(&slice[8..]) as usize;
         Byte32Reader::new_unchecked(&self.as_slice()[start..end])
     }
-    pub fn data(&self) -> BytesReader<'r> {
+    pub fn bytes(&self) -> BytesReader<'r> {
         let slice = self.as_slice();
         let start = molecule::unpack_number(&slice[8..]) as usize;
         if self.has_extra_fields() {
@@ -678,14 +678,14 @@ impl<'r> MoleculeDataReader<'r> {
         }
     }
 }
-impl<'r> molecule::prelude::Reader<'r> for MoleculeDataReader<'r> {
-    type Entity = MoleculeData;
-    const NAME: &'static str = "MoleculeDataReader";
+impl<'r> molecule::prelude::Reader<'r> for ActionReader<'r> {
+    type Entity = Action;
+    const NAME: &'static str = "ActionReader";
     fn to_entity(&self) -> Self::Entity {
         Self::Entity::new_unchecked(self.as_slice().to_owned().into())
     }
     fn new_unchecked(slice: &'r [u8]) -> Self {
-        MoleculeDataReader(slice)
+        ActionReader(slice)
     }
     fn as_slice(&self) -> &'r [u8] {
         self.0
@@ -730,28 +730,28 @@ impl<'r> molecule::prelude::Reader<'r> for MoleculeDataReader<'r> {
     }
 }
 #[derive(Debug, Default)]
-pub struct MoleculeDataBuilder {
+pub struct ActionBuilder {
     pub(crate) info_hash: Byte32,
-    pub(crate) data: Bytes,
+    pub(crate) bytes: Bytes,
 }
-impl MoleculeDataBuilder {
+impl ActionBuilder {
     pub const FIELD_COUNT: usize = 2;
     pub fn info_hash(mut self, v: Byte32) -> Self {
         self.info_hash = v;
         self
     }
-    pub fn data(mut self, v: Bytes) -> Self {
-        self.data = v;
+    pub fn bytes(mut self, v: Bytes) -> Self {
+        self.bytes = v;
         self
     }
 }
-impl molecule::prelude::Builder for MoleculeDataBuilder {
-    type Entity = MoleculeData;
-    const NAME: &'static str = "MoleculeDataBuilder";
+impl molecule::prelude::Builder for ActionBuilder {
+    type Entity = Action;
+    const NAME: &'static str = "ActionBuilder";
     fn expected_length(&self) -> usize {
         molecule::NUMBER_SIZE * (Self::FIELD_COUNT + 1)
             + self.info_hash.as_slice().len()
-            + self.data.as_slice().len()
+            + self.bytes.as_slice().len()
     }
     fn write<W: molecule::io::Write>(&self, writer: &mut W) -> molecule::io::Result<()> {
         let mut total_size = molecule::NUMBER_SIZE * (Self::FIELD_COUNT + 1);
@@ -759,20 +759,625 @@ impl molecule::prelude::Builder for MoleculeDataBuilder {
         offsets.push(total_size);
         total_size += self.info_hash.as_slice().len();
         offsets.push(total_size);
-        total_size += self.data.as_slice().len();
+        total_size += self.bytes.as_slice().len();
         writer.write_all(&molecule::pack_number(total_size as molecule::Number))?;
         for offset in offsets.into_iter() {
             writer.write_all(&molecule::pack_number(offset as molecule::Number))?;
         }
         writer.write_all(self.info_hash.as_slice())?;
-        writer.write_all(self.data.as_slice())?;
+        writer.write_all(self.bytes.as_slice())?;
         Ok(())
     }
     fn build(&self) -> Self::Entity {
         let mut inner = Vec::with_capacity(self.expected_length());
         self.write(&mut inner)
             .unwrap_or_else(|_| panic!("{} build should be ok", Self::NAME));
-        MoleculeData::new_unchecked(inner.into())
+        Action::new_unchecked(inner.into())
+    }
+}
+#[derive(Clone)]
+pub struct ScriptAction(molecule::bytes::Bytes);
+impl ::core::fmt::LowerHex for ScriptAction {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        use molecule::hex_string;
+        if f.alternate() {
+            write!(f, "0x")?;
+        }
+        write!(f, "{}", hex_string(self.as_slice()))
+    }
+}
+impl ::core::fmt::Debug for ScriptAction {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{}({:#x})", Self::NAME, self)
+    }
+}
+impl ::core::fmt::Display for ScriptAction {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{} {{ ", Self::NAME)?;
+        write!(f, "{}: {}", "script_hash", self.script_hash())?;
+        write!(f, ", {}: {}", "action", self.action())?;
+        let extra_count = self.count_extra_fields();
+        if extra_count != 0 {
+            write!(f, ", .. ({} fields)", extra_count)?;
+        }
+        write!(f, " }}")
+    }
+}
+impl ::core::default::Default for ScriptAction {
+    fn default() -> Self {
+        let v = molecule::bytes::Bytes::from_static(&Self::DEFAULT_VALUE);
+        ScriptAction::new_unchecked(v)
+    }
+}
+impl ScriptAction {
+    const DEFAULT_VALUE: [u8; 92] = [
+        92, 0, 0, 0, 12, 0, 0, 0, 44, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 48, 0, 0, 0, 12, 0, 0, 0, 44, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0,
+    ];
+    pub const FIELD_COUNT: usize = 2;
+    pub fn total_size(&self) -> usize {
+        molecule::unpack_number(self.as_slice()) as usize
+    }
+    pub fn field_count(&self) -> usize {
+        if self.total_size() == molecule::NUMBER_SIZE {
+            0
+        } else {
+            (molecule::unpack_number(&self.as_slice()[molecule::NUMBER_SIZE..]) as usize / 4) - 1
+        }
+    }
+    pub fn count_extra_fields(&self) -> usize {
+        self.field_count() - Self::FIELD_COUNT
+    }
+    pub fn has_extra_fields(&self) -> bool {
+        Self::FIELD_COUNT != self.field_count()
+    }
+    pub fn script_hash(&self) -> Byte32 {
+        let slice = self.as_slice();
+        let start = molecule::unpack_number(&slice[4..]) as usize;
+        let end = molecule::unpack_number(&slice[8..]) as usize;
+        Byte32::new_unchecked(self.0.slice(start..end))
+    }
+    pub fn action(&self) -> Action {
+        let slice = self.as_slice();
+        let start = molecule::unpack_number(&slice[8..]) as usize;
+        if self.has_extra_fields() {
+            let end = molecule::unpack_number(&slice[12..]) as usize;
+            Action::new_unchecked(self.0.slice(start..end))
+        } else {
+            Action::new_unchecked(self.0.slice(start..))
+        }
+    }
+    pub fn as_reader<'r>(&'r self) -> ScriptActionReader<'r> {
+        ScriptActionReader::new_unchecked(self.as_slice())
+    }
+}
+impl molecule::prelude::Entity for ScriptAction {
+    type Builder = ScriptActionBuilder;
+    const NAME: &'static str = "ScriptAction";
+    fn new_unchecked(data: molecule::bytes::Bytes) -> Self {
+        ScriptAction(data)
+    }
+    fn as_bytes(&self) -> molecule::bytes::Bytes {
+        self.0.clone()
+    }
+    fn as_slice(&self) -> &[u8] {
+        &self.0[..]
+    }
+    fn from_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
+        ScriptActionReader::from_slice(slice).map(|reader| reader.to_entity())
+    }
+    fn from_compatible_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
+        ScriptActionReader::from_compatible_slice(slice).map(|reader| reader.to_entity())
+    }
+    fn new_builder() -> Self::Builder {
+        ::core::default::Default::default()
+    }
+    fn as_builder(self) -> Self::Builder {
+        Self::new_builder()
+            .script_hash(self.script_hash())
+            .action(self.action())
+    }
+}
+#[derive(Clone, Copy)]
+pub struct ScriptActionReader<'r>(&'r [u8]);
+impl<'r> ::core::fmt::LowerHex for ScriptActionReader<'r> {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        use molecule::hex_string;
+        if f.alternate() {
+            write!(f, "0x")?;
+        }
+        write!(f, "{}", hex_string(self.as_slice()))
+    }
+}
+impl<'r> ::core::fmt::Debug for ScriptActionReader<'r> {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{}({:#x})", Self::NAME, self)
+    }
+}
+impl<'r> ::core::fmt::Display for ScriptActionReader<'r> {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{} {{ ", Self::NAME)?;
+        write!(f, "{}: {}", "script_hash", self.script_hash())?;
+        write!(f, ", {}: {}", "action", self.action())?;
+        let extra_count = self.count_extra_fields();
+        if extra_count != 0 {
+            write!(f, ", .. ({} fields)", extra_count)?;
+        }
+        write!(f, " }}")
+    }
+}
+impl<'r> ScriptActionReader<'r> {
+    pub const FIELD_COUNT: usize = 2;
+    pub fn total_size(&self) -> usize {
+        molecule::unpack_number(self.as_slice()) as usize
+    }
+    pub fn field_count(&self) -> usize {
+        if self.total_size() == molecule::NUMBER_SIZE {
+            0
+        } else {
+            (molecule::unpack_number(&self.as_slice()[molecule::NUMBER_SIZE..]) as usize / 4) - 1
+        }
+    }
+    pub fn count_extra_fields(&self) -> usize {
+        self.field_count() - Self::FIELD_COUNT
+    }
+    pub fn has_extra_fields(&self) -> bool {
+        Self::FIELD_COUNT != self.field_count()
+    }
+    pub fn script_hash(&self) -> Byte32Reader<'r> {
+        let slice = self.as_slice();
+        let start = molecule::unpack_number(&slice[4..]) as usize;
+        let end = molecule::unpack_number(&slice[8..]) as usize;
+        Byte32Reader::new_unchecked(&self.as_slice()[start..end])
+    }
+    pub fn action(&self) -> ActionReader<'r> {
+        let slice = self.as_slice();
+        let start = molecule::unpack_number(&slice[8..]) as usize;
+        if self.has_extra_fields() {
+            let end = molecule::unpack_number(&slice[12..]) as usize;
+            ActionReader::new_unchecked(&self.as_slice()[start..end])
+        } else {
+            ActionReader::new_unchecked(&self.as_slice()[start..])
+        }
+    }
+}
+impl<'r> molecule::prelude::Reader<'r> for ScriptActionReader<'r> {
+    type Entity = ScriptAction;
+    const NAME: &'static str = "ScriptActionReader";
+    fn to_entity(&self) -> Self::Entity {
+        Self::Entity::new_unchecked(self.as_slice().to_owned().into())
+    }
+    fn new_unchecked(slice: &'r [u8]) -> Self {
+        ScriptActionReader(slice)
+    }
+    fn as_slice(&self) -> &'r [u8] {
+        self.0
+    }
+    fn verify(slice: &[u8], compatible: bool) -> molecule::error::VerificationResult<()> {
+        use molecule::verification_error as ve;
+        let slice_len = slice.len();
+        if slice_len < molecule::NUMBER_SIZE {
+            return ve!(Self, HeaderIsBroken, molecule::NUMBER_SIZE, slice_len);
+        }
+        let total_size = molecule::unpack_number(slice) as usize;
+        if slice_len != total_size {
+            return ve!(Self, TotalSizeNotMatch, total_size, slice_len);
+        }
+        if slice_len < molecule::NUMBER_SIZE * 2 {
+            return ve!(Self, HeaderIsBroken, molecule::NUMBER_SIZE * 2, slice_len);
+        }
+        let offset_first = molecule::unpack_number(&slice[molecule::NUMBER_SIZE..]) as usize;
+        if offset_first % molecule::NUMBER_SIZE != 0 || offset_first < molecule::NUMBER_SIZE * 2 {
+            return ve!(Self, OffsetsNotMatch);
+        }
+        if slice_len < offset_first {
+            return ve!(Self, HeaderIsBroken, offset_first, slice_len);
+        }
+        let field_count = offset_first / molecule::NUMBER_SIZE - 1;
+        if field_count < Self::FIELD_COUNT {
+            return ve!(Self, FieldCountNotMatch, Self::FIELD_COUNT, field_count);
+        } else if !compatible && field_count > Self::FIELD_COUNT {
+            return ve!(Self, FieldCountNotMatch, Self::FIELD_COUNT, field_count);
+        };
+        let mut offsets: Vec<usize> = slice[molecule::NUMBER_SIZE..offset_first]
+            .chunks_exact(molecule::NUMBER_SIZE)
+            .map(|x| molecule::unpack_number(x) as usize)
+            .collect();
+        offsets.push(total_size);
+        if offsets.windows(2).any(|i| i[0] > i[1]) {
+            return ve!(Self, OffsetsNotMatch);
+        }
+        Byte32Reader::verify(&slice[offsets[0]..offsets[1]], compatible)?;
+        ActionReader::verify(&slice[offsets[1]..offsets[2]], compatible)?;
+        Ok(())
+    }
+}
+#[derive(Debug, Default)]
+pub struct ScriptActionBuilder {
+    pub(crate) script_hash: Byte32,
+    pub(crate) action: Action,
+}
+impl ScriptActionBuilder {
+    pub const FIELD_COUNT: usize = 2;
+    pub fn script_hash(mut self, v: Byte32) -> Self {
+        self.script_hash = v;
+        self
+    }
+    pub fn action(mut self, v: Action) -> Self {
+        self.action = v;
+        self
+    }
+}
+impl molecule::prelude::Builder for ScriptActionBuilder {
+    type Entity = ScriptAction;
+    const NAME: &'static str = "ScriptActionBuilder";
+    fn expected_length(&self) -> usize {
+        molecule::NUMBER_SIZE * (Self::FIELD_COUNT + 1)
+            + self.script_hash.as_slice().len()
+            + self.action.as_slice().len()
+    }
+    fn write<W: molecule::io::Write>(&self, writer: &mut W) -> molecule::io::Result<()> {
+        let mut total_size = molecule::NUMBER_SIZE * (Self::FIELD_COUNT + 1);
+        let mut offsets = Vec::with_capacity(Self::FIELD_COUNT);
+        offsets.push(total_size);
+        total_size += self.script_hash.as_slice().len();
+        offsets.push(total_size);
+        total_size += self.action.as_slice().len();
+        writer.write_all(&molecule::pack_number(total_size as molecule::Number))?;
+        for offset in offsets.into_iter() {
+            writer.write_all(&molecule::pack_number(offset as molecule::Number))?;
+        }
+        writer.write_all(self.script_hash.as_slice())?;
+        writer.write_all(self.action.as_slice())?;
+        Ok(())
+    }
+    fn build(&self) -> Self::Entity {
+        let mut inner = Vec::with_capacity(self.expected_length());
+        self.write(&mut inner)
+            .unwrap_or_else(|_| panic!("{} build should be ok", Self::NAME));
+        ScriptAction::new_unchecked(inner.into())
+    }
+}
+#[derive(Clone)]
+pub struct TypedMessageV1(molecule::bytes::Bytes);
+impl ::core::fmt::LowerHex for TypedMessageV1 {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        use molecule::hex_string;
+        if f.alternate() {
+            write!(f, "0x")?;
+        }
+        write!(f, "{}", hex_string(self.as_slice()))
+    }
+}
+impl ::core::fmt::Debug for TypedMessageV1 {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{}({:#x})", Self::NAME, self)
+    }
+}
+impl ::core::fmt::Display for TypedMessageV1 {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{} [", Self::NAME)?;
+        for i in 0..self.len() {
+            if i == 0 {
+                write!(f, "{}", self.get_unchecked(i))?;
+            } else {
+                write!(f, ", {}", self.get_unchecked(i))?;
+            }
+        }
+        write!(f, "]")
+    }
+}
+impl ::core::default::Default for TypedMessageV1 {
+    fn default() -> Self {
+        let v = molecule::bytes::Bytes::from_static(&Self::DEFAULT_VALUE);
+        TypedMessageV1::new_unchecked(v)
+    }
+}
+impl TypedMessageV1 {
+    const DEFAULT_VALUE: [u8; 4] = [4, 0, 0, 0];
+    pub fn total_size(&self) -> usize {
+        molecule::unpack_number(self.as_slice()) as usize
+    }
+    pub fn item_count(&self) -> usize {
+        if self.total_size() == molecule::NUMBER_SIZE {
+            0
+        } else {
+            (molecule::unpack_number(&self.as_slice()[molecule::NUMBER_SIZE..]) as usize / 4) - 1
+        }
+    }
+    pub fn len(&self) -> usize {
+        self.item_count()
+    }
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+    pub fn get(&self, idx: usize) -> Option<ScriptAction> {
+        if idx >= self.len() {
+            None
+        } else {
+            Some(self.get_unchecked(idx))
+        }
+    }
+    pub fn get_unchecked(&self, idx: usize) -> ScriptAction {
+        let slice = self.as_slice();
+        let start_idx = molecule::NUMBER_SIZE * (1 + idx);
+        let start = molecule::unpack_number(&slice[start_idx..]) as usize;
+        if idx == self.len() - 1 {
+            ScriptAction::new_unchecked(self.0.slice(start..))
+        } else {
+            let end_idx = start_idx + molecule::NUMBER_SIZE;
+            let end = molecule::unpack_number(&slice[end_idx..]) as usize;
+            ScriptAction::new_unchecked(self.0.slice(start..end))
+        }
+    }
+    pub fn as_reader<'r>(&'r self) -> TypedMessageV1Reader<'r> {
+        TypedMessageV1Reader::new_unchecked(self.as_slice())
+    }
+}
+impl molecule::prelude::Entity for TypedMessageV1 {
+    type Builder = TypedMessageV1Builder;
+    const NAME: &'static str = "TypedMessageV1";
+    fn new_unchecked(data: molecule::bytes::Bytes) -> Self {
+        TypedMessageV1(data)
+    }
+    fn as_bytes(&self) -> molecule::bytes::Bytes {
+        self.0.clone()
+    }
+    fn as_slice(&self) -> &[u8] {
+        &self.0[..]
+    }
+    fn from_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
+        TypedMessageV1Reader::from_slice(slice).map(|reader| reader.to_entity())
+    }
+    fn from_compatible_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
+        TypedMessageV1Reader::from_compatible_slice(slice).map(|reader| reader.to_entity())
+    }
+    fn new_builder() -> Self::Builder {
+        ::core::default::Default::default()
+    }
+    fn as_builder(self) -> Self::Builder {
+        Self::new_builder().extend(self.into_iter())
+    }
+}
+#[derive(Clone, Copy)]
+pub struct TypedMessageV1Reader<'r>(&'r [u8]);
+impl<'r> ::core::fmt::LowerHex for TypedMessageV1Reader<'r> {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        use molecule::hex_string;
+        if f.alternate() {
+            write!(f, "0x")?;
+        }
+        write!(f, "{}", hex_string(self.as_slice()))
+    }
+}
+impl<'r> ::core::fmt::Debug for TypedMessageV1Reader<'r> {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{}({:#x})", Self::NAME, self)
+    }
+}
+impl<'r> ::core::fmt::Display for TypedMessageV1Reader<'r> {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{} [", Self::NAME)?;
+        for i in 0..self.len() {
+            if i == 0 {
+                write!(f, "{}", self.get_unchecked(i))?;
+            } else {
+                write!(f, ", {}", self.get_unchecked(i))?;
+            }
+        }
+        write!(f, "]")
+    }
+}
+impl<'r> TypedMessageV1Reader<'r> {
+    pub fn total_size(&self) -> usize {
+        molecule::unpack_number(self.as_slice()) as usize
+    }
+    pub fn item_count(&self) -> usize {
+        if self.total_size() == molecule::NUMBER_SIZE {
+            0
+        } else {
+            (molecule::unpack_number(&self.as_slice()[molecule::NUMBER_SIZE..]) as usize / 4) - 1
+        }
+    }
+    pub fn len(&self) -> usize {
+        self.item_count()
+    }
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+    pub fn get(&self, idx: usize) -> Option<ScriptActionReader<'r>> {
+        if idx >= self.len() {
+            None
+        } else {
+            Some(self.get_unchecked(idx))
+        }
+    }
+    pub fn get_unchecked(&self, idx: usize) -> ScriptActionReader<'r> {
+        let slice = self.as_slice();
+        let start_idx = molecule::NUMBER_SIZE * (1 + idx);
+        let start = molecule::unpack_number(&slice[start_idx..]) as usize;
+        if idx == self.len() - 1 {
+            ScriptActionReader::new_unchecked(&self.as_slice()[start..])
+        } else {
+            let end_idx = start_idx + molecule::NUMBER_SIZE;
+            let end = molecule::unpack_number(&slice[end_idx..]) as usize;
+            ScriptActionReader::new_unchecked(&self.as_slice()[start..end])
+        }
+    }
+}
+impl<'r> molecule::prelude::Reader<'r> for TypedMessageV1Reader<'r> {
+    type Entity = TypedMessageV1;
+    const NAME: &'static str = "TypedMessageV1Reader";
+    fn to_entity(&self) -> Self::Entity {
+        Self::Entity::new_unchecked(self.as_slice().to_owned().into())
+    }
+    fn new_unchecked(slice: &'r [u8]) -> Self {
+        TypedMessageV1Reader(slice)
+    }
+    fn as_slice(&self) -> &'r [u8] {
+        self.0
+    }
+    fn verify(slice: &[u8], compatible: bool) -> molecule::error::VerificationResult<()> {
+        use molecule::verification_error as ve;
+        let slice_len = slice.len();
+        if slice_len < molecule::NUMBER_SIZE {
+            return ve!(Self, HeaderIsBroken, molecule::NUMBER_SIZE, slice_len);
+        }
+        let total_size = molecule::unpack_number(slice) as usize;
+        if slice_len != total_size {
+            return ve!(Self, TotalSizeNotMatch, total_size, slice_len);
+        }
+        if slice_len == molecule::NUMBER_SIZE {
+            return Ok(());
+        }
+        if slice_len < molecule::NUMBER_SIZE * 2 {
+            return ve!(
+                Self,
+                TotalSizeNotMatch,
+                molecule::NUMBER_SIZE * 2,
+                slice_len
+            );
+        }
+        let offset_first = molecule::unpack_number(&slice[molecule::NUMBER_SIZE..]) as usize;
+        if offset_first % molecule::NUMBER_SIZE != 0 || offset_first < molecule::NUMBER_SIZE * 2 {
+            return ve!(Self, OffsetsNotMatch);
+        }
+        if slice_len < offset_first {
+            return ve!(Self, HeaderIsBroken, offset_first, slice_len);
+        }
+        let mut offsets: Vec<usize> = slice[molecule::NUMBER_SIZE..offset_first]
+            .chunks_exact(molecule::NUMBER_SIZE)
+            .map(|x| molecule::unpack_number(x) as usize)
+            .collect();
+        offsets.push(total_size);
+        if offsets.windows(2).any(|i| i[0] > i[1]) {
+            return ve!(Self, OffsetsNotMatch);
+        }
+        for pair in offsets.windows(2) {
+            let start = pair[0];
+            let end = pair[1];
+            ScriptActionReader::verify(&slice[start..end], compatible)?;
+        }
+        Ok(())
+    }
+}
+#[derive(Debug, Default)]
+pub struct TypedMessageV1Builder(pub(crate) Vec<ScriptAction>);
+impl TypedMessageV1Builder {
+    pub fn set(mut self, v: Vec<ScriptAction>) -> Self {
+        self.0 = v;
+        self
+    }
+    pub fn push(mut self, v: ScriptAction) -> Self {
+        self.0.push(v);
+        self
+    }
+    pub fn extend<T: ::core::iter::IntoIterator<Item = ScriptAction>>(mut self, iter: T) -> Self {
+        for elem in iter {
+            self.0.push(elem);
+        }
+        self
+    }
+    pub fn replace(&mut self, index: usize, v: ScriptAction) -> Option<ScriptAction> {
+        self.0
+            .get_mut(index)
+            .map(|item| ::core::mem::replace(item, v))
+    }
+}
+impl molecule::prelude::Builder for TypedMessageV1Builder {
+    type Entity = TypedMessageV1;
+    const NAME: &'static str = "TypedMessageV1Builder";
+    fn expected_length(&self) -> usize {
+        molecule::NUMBER_SIZE * (self.0.len() + 1)
+            + self
+                .0
+                .iter()
+                .map(|inner| inner.as_slice().len())
+                .sum::<usize>()
+    }
+    fn write<W: molecule::io::Write>(&self, writer: &mut W) -> molecule::io::Result<()> {
+        let item_count = self.0.len();
+        if item_count == 0 {
+            writer.write_all(&molecule::pack_number(
+                molecule::NUMBER_SIZE as molecule::Number,
+            ))?;
+        } else {
+            let (total_size, offsets) = self.0.iter().fold(
+                (
+                    molecule::NUMBER_SIZE * (item_count + 1),
+                    Vec::with_capacity(item_count),
+                ),
+                |(start, mut offsets), inner| {
+                    offsets.push(start);
+                    (start + inner.as_slice().len(), offsets)
+                },
+            );
+            writer.write_all(&molecule::pack_number(total_size as molecule::Number))?;
+            for offset in offsets.into_iter() {
+                writer.write_all(&molecule::pack_number(offset as molecule::Number))?;
+            }
+            for inner in self.0.iter() {
+                writer.write_all(inner.as_slice())?;
+            }
+        }
+        Ok(())
+    }
+    fn build(&self) -> Self::Entity {
+        let mut inner = Vec::with_capacity(self.expected_length());
+        self.write(&mut inner)
+            .unwrap_or_else(|_| panic!("{} build should be ok", Self::NAME));
+        TypedMessageV1::new_unchecked(inner.into())
+    }
+}
+pub struct TypedMessageV1Iterator(TypedMessageV1, usize, usize);
+impl ::core::iter::Iterator for TypedMessageV1Iterator {
+    type Item = ScriptAction;
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.1 >= self.2 {
+            None
+        } else {
+            let ret = self.0.get_unchecked(self.1);
+            self.1 += 1;
+            Some(ret)
+        }
+    }
+}
+impl ::core::iter::ExactSizeIterator for TypedMessageV1Iterator {
+    fn len(&self) -> usize {
+        self.2 - self.1
+    }
+}
+impl ::core::iter::IntoIterator for TypedMessageV1 {
+    type Item = ScriptAction;
+    type IntoIter = TypedMessageV1Iterator;
+    fn into_iter(self) -> Self::IntoIter {
+        let len = self.len();
+        TypedMessageV1Iterator(self, 0, len)
+    }
+}
+impl<'r> TypedMessageV1Reader<'r> {
+    pub fn iter<'t>(&'t self) -> TypedMessageV1ReaderIterator<'t, 'r> {
+        TypedMessageV1ReaderIterator(&self, 0, self.len())
+    }
+}
+pub struct TypedMessageV1ReaderIterator<'t, 'r>(&'t TypedMessageV1Reader<'r>, usize, usize);
+impl<'t: 'r, 'r> ::core::iter::Iterator for TypedMessageV1ReaderIterator<'t, 'r> {
+    type Item = ScriptActionReader<'t>;
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.1 >= self.2 {
+            None
+        } else {
+            let ret = self.0.get_unchecked(self.1);
+            self.1 += 1;
+            Some(ret)
+        }
+    }
+}
+impl<'t: 'r, 'r> ::core::iter::ExactSizeIterator for TypedMessageV1ReaderIterator<'t, 'r> {
+    fn len(&self) -> usize {
+        self.2 - self.1
     }
 }
 #[derive(Clone)]
@@ -805,10 +1410,7 @@ impl ::core::default::Default for TypedMessage {
     }
 }
 impl TypedMessage {
-    const DEFAULT_VALUE: [u8; 52] = [
-        0, 0, 0, 0, 48, 0, 0, 0, 12, 0, 0, 0, 44, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    ];
+    const DEFAULT_VALUE: [u8; 8] = [0, 0, 0, 0, 4, 0, 0, 0];
     pub const ITEMS_COUNT: usize = 1;
     pub fn item_id(&self) -> molecule::Number {
         molecule::unpack_number(self.as_slice())
@@ -816,7 +1418,7 @@ impl TypedMessage {
     pub fn to_enum(&self) -> TypedMessageUnion {
         let inner = self.0.slice(molecule::NUMBER_SIZE..);
         match self.item_id() {
-            0 => MoleculeData::new_unchecked(inner).into(),
+            0 => TypedMessageV1::new_unchecked(inner).into(),
             _ => panic!("{}: invalid data", Self::NAME),
         }
     }
@@ -880,7 +1482,7 @@ impl<'r> TypedMessageReader<'r> {
     pub fn to_enum(&self) -> TypedMessageUnionReader<'r> {
         let inner = &self.as_slice()[molecule::NUMBER_SIZE..];
         match self.item_id() {
-            0 => MoleculeDataReader::new_unchecked(inner).into(),
+            0 => TypedMessageV1Reader::new_unchecked(inner).into(),
             _ => panic!("{}: invalid data", Self::NAME),
         }
     }
@@ -906,7 +1508,7 @@ impl<'r> molecule::prelude::Reader<'r> for TypedMessageReader<'r> {
         let item_id = molecule::unpack_number(slice);
         let inner_slice = &slice[molecule::NUMBER_SIZE..];
         match item_id {
-            0 => MoleculeDataReader::verify(inner_slice, compatible),
+            0 => TypedMessageV1Reader::verify(inner_slice, compatible),
             _ => ve!(Self, UnknownItem, Self::ITEMS_COUNT, item_id),
         }?;
         Ok(())
@@ -943,22 +1545,22 @@ impl molecule::prelude::Builder for TypedMessageBuilder {
 }
 #[derive(Debug, Clone)]
 pub enum TypedMessageUnion {
-    MoleculeData(MoleculeData),
+    TypedMessageV1(TypedMessageV1),
 }
 #[derive(Debug, Clone, Copy)]
 pub enum TypedMessageUnionReader<'r> {
-    MoleculeData(MoleculeDataReader<'r>),
+    TypedMessageV1(TypedMessageV1Reader<'r>),
 }
 impl ::core::default::Default for TypedMessageUnion {
     fn default() -> Self {
-        TypedMessageUnion::MoleculeData(::core::default::Default::default())
+        TypedMessageUnion::TypedMessageV1(::core::default::Default::default())
     }
 }
 impl ::core::fmt::Display for TypedMessageUnion {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         match self {
-            TypedMessageUnion::MoleculeData(ref item) => {
-                write!(f, "{}::{}({})", Self::NAME, MoleculeData::NAME, item)
+            TypedMessageUnion::TypedMessageV1(ref item) => {
+                write!(f, "{}::{}({})", Self::NAME, TypedMessageV1::NAME, item)
             }
         }
     }
@@ -966,8 +1568,8 @@ impl ::core::fmt::Display for TypedMessageUnion {
 impl<'r> ::core::fmt::Display for TypedMessageUnionReader<'r> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         match self {
-            TypedMessageUnionReader::MoleculeData(ref item) => {
-                write!(f, "{}::{}({})", Self::NAME, MoleculeData::NAME, item)
+            TypedMessageUnionReader::TypedMessageV1(ref item) => {
+                write!(f, "{}::{}({})", Self::NAME, TypedMessageV1::NAME, item)
             }
         }
     }
@@ -975,52 +1577,52 @@ impl<'r> ::core::fmt::Display for TypedMessageUnionReader<'r> {
 impl TypedMessageUnion {
     pub(crate) fn display_inner(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         match self {
-            TypedMessageUnion::MoleculeData(ref item) => write!(f, "{}", item),
+            TypedMessageUnion::TypedMessageV1(ref item) => write!(f, "{}", item),
         }
     }
 }
 impl<'r> TypedMessageUnionReader<'r> {
     pub(crate) fn display_inner(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         match self {
-            TypedMessageUnionReader::MoleculeData(ref item) => write!(f, "{}", item),
+            TypedMessageUnionReader::TypedMessageV1(ref item) => write!(f, "{}", item),
         }
     }
 }
-impl ::core::convert::From<MoleculeData> for TypedMessageUnion {
-    fn from(item: MoleculeData) -> Self {
-        TypedMessageUnion::MoleculeData(item)
+impl ::core::convert::From<TypedMessageV1> for TypedMessageUnion {
+    fn from(item: TypedMessageV1) -> Self {
+        TypedMessageUnion::TypedMessageV1(item)
     }
 }
-impl<'r> ::core::convert::From<MoleculeDataReader<'r>> for TypedMessageUnionReader<'r> {
-    fn from(item: MoleculeDataReader<'r>) -> Self {
-        TypedMessageUnionReader::MoleculeData(item)
+impl<'r> ::core::convert::From<TypedMessageV1Reader<'r>> for TypedMessageUnionReader<'r> {
+    fn from(item: TypedMessageV1Reader<'r>) -> Self {
+        TypedMessageUnionReader::TypedMessageV1(item)
     }
 }
 impl TypedMessageUnion {
     pub const NAME: &'static str = "TypedMessageUnion";
     pub fn as_bytes(&self) -> molecule::bytes::Bytes {
         match self {
-            TypedMessageUnion::MoleculeData(item) => item.as_bytes(),
+            TypedMessageUnion::TypedMessageV1(item) => item.as_bytes(),
         }
     }
     pub fn as_slice(&self) -> &[u8] {
         match self {
-            TypedMessageUnion::MoleculeData(item) => item.as_slice(),
+            TypedMessageUnion::TypedMessageV1(item) => item.as_slice(),
         }
     }
     pub fn item_id(&self) -> molecule::Number {
         match self {
-            TypedMessageUnion::MoleculeData(_) => 0,
+            TypedMessageUnion::TypedMessageV1(_) => 0,
         }
     }
     pub fn item_name(&self) -> &str {
         match self {
-            TypedMessageUnion::MoleculeData(_) => "MoleculeData",
+            TypedMessageUnion::TypedMessageV1(_) => "TypedMessageV1",
         }
     }
     pub fn as_reader<'r>(&'r self) -> TypedMessageUnionReader<'r> {
         match self {
-            TypedMessageUnion::MoleculeData(item) => item.as_reader().into(),
+            TypedMessageUnion::TypedMessageV1(item) => item.as_reader().into(),
         }
     }
 }
@@ -1028,17 +1630,17 @@ impl<'r> TypedMessageUnionReader<'r> {
     pub const NAME: &'r str = "TypedMessageUnionReader";
     pub fn as_slice(&self) -> &'r [u8] {
         match self {
-            TypedMessageUnionReader::MoleculeData(item) => item.as_slice(),
+            TypedMessageUnionReader::TypedMessageV1(item) => item.as_slice(),
         }
     }
     pub fn item_id(&self) -> molecule::Number {
         match self {
-            TypedMessageUnionReader::MoleculeData(_) => 0,
+            TypedMessageUnionReader::TypedMessageV1(_) => 0,
         }
     }
     pub fn item_name(&self) -> &str {
         match self {
-            TypedMessageUnionReader::MoleculeData(_) => "MoleculeData",
+            TypedMessageUnionReader::TypedMessageV1(_) => "TypedMessageV1",
         }
     }
 }
@@ -1077,10 +1679,8 @@ impl ::core::default::Default for SighashWithAction {
     }
 }
 impl SighashWithAction {
-    const DEFAULT_VALUE: [u8; 68] = [
-        68, 0, 0, 0, 12, 0, 0, 0, 16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 48, 0, 0, 0, 12, 0, 0, 0,
-        44, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    const DEFAULT_VALUE: [u8; 24] = [
+        24, 0, 0, 0, 12, 0, 0, 0, 16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0,
     ];
     pub const FIELD_COUNT: usize = 2;
     pub fn total_size(&self) -> usize {
@@ -2516,9 +3116,11 @@ impl ::core::default::Default for Scratch {
     }
 }
 impl Scratch {
-    const DEFAULT_VALUE: [u8; 52] = [
-        0, 0, 0, 0, 48, 0, 0, 0, 12, 0, 0, 0, 44, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    const DEFAULT_VALUE: [u8; 96] = [
+        0, 0, 0, 0, 92, 0, 0, 0, 12, 0, 0, 0, 44, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 48, 0, 0, 0, 12, 0, 0, 0, 44, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0,
     ];
     pub const ITEMS_COUNT: usize = 1;
     pub fn item_id(&self) -> molecule::Number {
@@ -2527,7 +3129,7 @@ impl Scratch {
     pub fn to_enum(&self) -> ScratchUnion {
         let inner = self.0.slice(molecule::NUMBER_SIZE..);
         match self.item_id() {
-            0 => MoleculeData::new_unchecked(inner).into(),
+            0 => ScriptAction::new_unchecked(inner).into(),
             _ => panic!("{}: invalid data", Self::NAME),
         }
     }
@@ -2591,7 +3193,7 @@ impl<'r> ScratchReader<'r> {
     pub fn to_enum(&self) -> ScratchUnionReader<'r> {
         let inner = &self.as_slice()[molecule::NUMBER_SIZE..];
         match self.item_id() {
-            0 => MoleculeDataReader::new_unchecked(inner).into(),
+            0 => ScriptActionReader::new_unchecked(inner).into(),
             _ => panic!("{}: invalid data", Self::NAME),
         }
     }
@@ -2617,7 +3219,7 @@ impl<'r> molecule::prelude::Reader<'r> for ScratchReader<'r> {
         let item_id = molecule::unpack_number(slice);
         let inner_slice = &slice[molecule::NUMBER_SIZE..];
         match item_id {
-            0 => MoleculeDataReader::verify(inner_slice, compatible),
+            0 => ScriptActionReader::verify(inner_slice, compatible),
             _ => ve!(Self, UnknownItem, Self::ITEMS_COUNT, item_id),
         }?;
         Ok(())
@@ -2654,22 +3256,22 @@ impl molecule::prelude::Builder for ScratchBuilder {
 }
 #[derive(Debug, Clone)]
 pub enum ScratchUnion {
-    MoleculeData(MoleculeData),
+    ScriptAction(ScriptAction),
 }
 #[derive(Debug, Clone, Copy)]
 pub enum ScratchUnionReader<'r> {
-    MoleculeData(MoleculeDataReader<'r>),
+    ScriptAction(ScriptActionReader<'r>),
 }
 impl ::core::default::Default for ScratchUnion {
     fn default() -> Self {
-        ScratchUnion::MoleculeData(::core::default::Default::default())
+        ScratchUnion::ScriptAction(::core::default::Default::default())
     }
 }
 impl ::core::fmt::Display for ScratchUnion {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         match self {
-            ScratchUnion::MoleculeData(ref item) => {
-                write!(f, "{}::{}({})", Self::NAME, MoleculeData::NAME, item)
+            ScratchUnion::ScriptAction(ref item) => {
+                write!(f, "{}::{}({})", Self::NAME, ScriptAction::NAME, item)
             }
         }
     }
@@ -2677,8 +3279,8 @@ impl ::core::fmt::Display for ScratchUnion {
 impl<'r> ::core::fmt::Display for ScratchUnionReader<'r> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         match self {
-            ScratchUnionReader::MoleculeData(ref item) => {
-                write!(f, "{}::{}({})", Self::NAME, MoleculeData::NAME, item)
+            ScratchUnionReader::ScriptAction(ref item) => {
+                write!(f, "{}::{}({})", Self::NAME, ScriptAction::NAME, item)
             }
         }
     }
@@ -2686,52 +3288,52 @@ impl<'r> ::core::fmt::Display for ScratchUnionReader<'r> {
 impl ScratchUnion {
     pub(crate) fn display_inner(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         match self {
-            ScratchUnion::MoleculeData(ref item) => write!(f, "{}", item),
+            ScratchUnion::ScriptAction(ref item) => write!(f, "{}", item),
         }
     }
 }
 impl<'r> ScratchUnionReader<'r> {
     pub(crate) fn display_inner(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         match self {
-            ScratchUnionReader::MoleculeData(ref item) => write!(f, "{}", item),
+            ScratchUnionReader::ScriptAction(ref item) => write!(f, "{}", item),
         }
     }
 }
-impl ::core::convert::From<MoleculeData> for ScratchUnion {
-    fn from(item: MoleculeData) -> Self {
-        ScratchUnion::MoleculeData(item)
+impl ::core::convert::From<ScriptAction> for ScratchUnion {
+    fn from(item: ScriptAction) -> Self {
+        ScratchUnion::ScriptAction(item)
     }
 }
-impl<'r> ::core::convert::From<MoleculeDataReader<'r>> for ScratchUnionReader<'r> {
-    fn from(item: MoleculeDataReader<'r>) -> Self {
-        ScratchUnionReader::MoleculeData(item)
+impl<'r> ::core::convert::From<ScriptActionReader<'r>> for ScratchUnionReader<'r> {
+    fn from(item: ScriptActionReader<'r>) -> Self {
+        ScratchUnionReader::ScriptAction(item)
     }
 }
 impl ScratchUnion {
     pub const NAME: &'static str = "ScratchUnion";
     pub fn as_bytes(&self) -> molecule::bytes::Bytes {
         match self {
-            ScratchUnion::MoleculeData(item) => item.as_bytes(),
+            ScratchUnion::ScriptAction(item) => item.as_bytes(),
         }
     }
     pub fn as_slice(&self) -> &[u8] {
         match self {
-            ScratchUnion::MoleculeData(item) => item.as_slice(),
+            ScratchUnion::ScriptAction(item) => item.as_slice(),
         }
     }
     pub fn item_id(&self) -> molecule::Number {
         match self {
-            ScratchUnion::MoleculeData(_) => 0,
+            ScratchUnion::ScriptAction(_) => 0,
         }
     }
     pub fn item_name(&self) -> &str {
         match self {
-            ScratchUnion::MoleculeData(_) => "MoleculeData",
+            ScratchUnion::ScriptAction(_) => "ScriptAction",
         }
     }
     pub fn as_reader<'r>(&'r self) -> ScratchUnionReader<'r> {
         match self {
-            ScratchUnion::MoleculeData(item) => item.as_reader().into(),
+            ScratchUnion::ScriptAction(item) => item.as_reader().into(),
         }
     }
 }
@@ -2739,17 +3341,17 @@ impl<'r> ScratchUnionReader<'r> {
     pub const NAME: &'r str = "ScratchUnionReader";
     pub fn as_slice(&self) -> &'r [u8] {
         match self {
-            ScratchUnionReader::MoleculeData(item) => item.as_slice(),
+            ScratchUnionReader::ScriptAction(item) => item.as_slice(),
         }
     }
     pub fn item_id(&self) -> molecule::Number {
         match self {
-            ScratchUnionReader::MoleculeData(_) => 0,
+            ScratchUnionReader::ScriptAction(_) => 0,
         }
     }
     pub fn item_name(&self) -> &str {
         match self {
-            ScratchUnionReader::MoleculeData(_) => "MoleculeData",
+            ScratchUnionReader::ScriptAction(_) => "ScriptAction",
         }
     }
 }
@@ -2956,14 +3558,12 @@ impl ::core::default::Default for SigningAction {
     }
 }
 impl SigningAction {
-    const DEFAULT_VALUE: [u8; 181] = [
-        181, 0, 0, 0, 28, 0, 0, 0, 36, 0, 0, 0, 93, 0, 0, 0, 145, 0, 0, 0, 177, 0, 0, 0, 181, 0, 0,
+    const DEFAULT_VALUE: [u8; 137] = [
+        137, 0, 0, 0, 28, 0, 0, 0, 36, 0, 0, 0, 93, 0, 0, 0, 101, 0, 0, 0, 133, 0, 0, 0, 137, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 53, 0, 0, 0, 16, 0, 0, 0, 48, 0, 0, 0, 49, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 48, 0, 0, 0, 12, 0, 0, 0, 44, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 4, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0,
     ];
     pub const FIELD_COUNT: usize = 6;
     pub fn total_size(&self) -> usize {
@@ -3637,11 +4237,9 @@ impl ::core::default::Default for Otx {
     }
 }
 impl Otx {
-    const DEFAULT_VALUE: [u8; 100] = [
-        100, 0, 0, 0, 28, 0, 0, 0, 32, 0, 0, 0, 36, 0, 0, 0, 40, 0, 0, 0, 44, 0, 0, 0, 48, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 48, 0, 0, 0, 12, 0,
-        0, 0, 44, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    const DEFAULT_VALUE: [u8; 56] = [
+        56, 0, 0, 0, 28, 0, 0, 0, 32, 0, 0, 0, 36, 0, 0, 0, 40, 0, 0, 0, 44, 0, 0, 0, 48, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0,
     ];
     pub const FIELD_COUNT: usize = 6;
     pub fn total_size(&self) -> usize {

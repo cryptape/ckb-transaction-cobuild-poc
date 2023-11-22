@@ -32,10 +32,8 @@ impl ::core::default::Default for ExtendedWitness {
     }
 }
 impl ExtendedWitness {
-    const DEFAULT_VALUE: [u8; 72] = [
-        1, 0, 0, 255, 68, 0, 0, 0, 12, 0, 0, 0, 16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 48, 0, 0, 0,
-        12, 0, 0, 0, 44, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    const DEFAULT_VALUE: [u8; 28] = [
+        1, 0, 0, 255, 24, 0, 0, 0, 12, 0, 0, 0, 16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0,
     ];
     pub const ITEMS_COUNT: usize = 4;
     pub fn item_id(&self) -> molecule::Number {
