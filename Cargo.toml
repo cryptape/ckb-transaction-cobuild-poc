@@ -1,0 +1,18 @@
+[workspace]
+members = ["ckb-typed-message", "contracts/typed-message-lock-demo"]
+exclude = ["tests"]
+
+[profile.release]
+overflow-checks = true
+opt-level = 3
+panic = 'abort'
+strip = true
+lto = true
+debug-assertions = true
+
+[profile.dev]
+strip = true
+opt-level = 1
+debug = false
+panic = 'abort'
+debug-assertions = true
