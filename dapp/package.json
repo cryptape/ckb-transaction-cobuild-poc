@@ -1,0 +1,25 @@
+{
+  "name": "dapp",
+  "version": "0.1.0",
+  "license": "MIT",
+  "scripts": {
+    "rawCreateImmortalSpore": "ts-node src/rawCreateImmortalSpore.ts",
+    "rawCreatePrivateCluster": "ts-node src/rawCreatePrivateCluster.ts",
+    "rawCreateSpore": "ts-node src/rawCreateSpore.ts",
+    "rawCreateSporeWithCluster": "ts-node src/rawCreateSporeWithCluster.ts",
+    "rawTransferSpore": "ts-node src/rawTransferSpore.ts",
+    "tmCreateSpore": "ts-node src/tmCreateSpore.ts",
+    "tmTransferSpore": "ts-node src/tmTransferSpore.ts"
+  },
+  "dependencies": {
+    "@ckb-lumos/lumos": "^0.21.0-next.0",
+    "@spore-sdk/core": "0.1.0-beta.14"
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.0",
+    "typescript": "^5.1.6"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
