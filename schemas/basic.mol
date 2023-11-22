@@ -6,13 +6,20 @@ union Address {
     Script,
 }
 
-table MoleculeData {
+table Action {
     info_hash: Byte32,
     data: Bytes,
 }
 
+table ScriptAction {
+    script_hash: Byte32,
+    action: Action,
+}
+
+vector TypedMessageV1 <ScriptAction>;
+
 union TypedMessage {
-    MoleculeData,
+    TypedMessageV1,
 }
 
 table SighashWithAction {
@@ -39,7 +46,7 @@ union DappInfo {
 vector DappInfos <DappInfo>;
 
 union Scratch {
-    MoleculeData,
+    ScriptAction,
 }
 
 option ScratchOpt (Scratch);

@@ -73,7 +73,7 @@ pub fn check_sighash_with_action() -> Result<(), Error> {
 
 ///
 /// Fetch the corresponding ExtendedWitness( Sighash or SighashWithAction)
-/// Used by lock script with typed message support
+/// Used by lock script
 ///
 pub fn fetch_sighash() -> Result<ExtendedWitness, Error> {
     match load_witness(0, Source::GroupInput) {
@@ -81,16 +81,14 @@ pub fn fetch_sighash() -> Result<ExtendedWitness, Error> {
             if let Ok(r) = ExtendedWitnessReader::from_slice(&witness) {
                 match r.to_enum() {
                     ExtendedWitnessUnionReader::SighashWithAction(_)
-                    | ExtendedWitnessUnionReader::Sighash(_) => return Ok(r.to_entity()),
-                    _ => {
-                        return Err(Error::MoleculeEncoding);
-                    }
+                    | ExtendedWitnessUnionReader::Sighash(_) => Ok(r.to_entity()),
+                    _ => Err(Error::MoleculeEncoding),
                 }
             } else {
-                return Err(Error::MoleculeEncoding);
+                Err(Error::MoleculeEncoding)
             }
         }
-        Err(e) => return Err(e.into()),
+        Err(e) => Err(e.into()),
     }
 }
 
@@ -206,6 +204,7 @@ fn calculate_inputs_len() -> Result<usize, SysError> {
 /// parse transaction with typed message and return 2 values:
 /// 1. digest message, 32 bytes message for signature verification
 /// 2. lock, lock field in SighashWithAction or Sighash. Normally as signature.
+/// This function is mainly used by lock script
 ///
 pub fn parse_typed_message() -> Result<([u8; 32], Vec<u8>), Error> {
     // Ensure that a SighashWitAction is present throughout the entire transaction
