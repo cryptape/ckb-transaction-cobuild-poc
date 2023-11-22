@@ -8,7 +8,7 @@ union Address {
 
 table Action {
     info_hash: Byte32,
-    bytes: Bytes,
+    data: Bytes,
 }
 
 table ScriptAction {

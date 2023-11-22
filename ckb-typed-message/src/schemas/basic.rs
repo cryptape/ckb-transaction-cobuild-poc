@@ -532,7 +532,7 @@ impl ::core::fmt::Display for Action {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "{} {{ ", Self::NAME)?;
         write!(f, "{}: {}", "info_hash", self.info_hash())?;
-        write!(f, ", {}: {}", "bytes", self.bytes())?;
+        write!(f, ", {}: {}", "data", self.data())?;
         let extra_count = self.count_extra_fields();
         if extra_count != 0 {
             write!(f, ", .. ({} fields)", extra_count)?;
@@ -574,7 +574,7 @@ impl Action {
         let end = molecule::unpack_number(&slice[8..]) as usize;
         Byte32::new_unchecked(self.0.slice(start..end))
     }
-    pub fn bytes(&self) -> Bytes {
+    pub fn data(&self) -> Bytes {
         let slice = self.as_slice();
         let start = molecule::unpack_number(&slice[8..]) as usize;
         if self.has_extra_fields() {
@@ -612,7 +612,7 @@ impl molecule::prelude::Entity for Action {
     fn as_builder(self) -> Self::Builder {
         Self::new_builder()
             .info_hash(self.info_hash())
-            .bytes(self.bytes())
+            .data(self.data())
     }
 }
 #[derive(Clone, Copy)]
@@ -635,7 +635,7 @@ impl<'r> ::core::fmt::Display for ActionReader<'r> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "{} {{ ", Self::NAME)?;
         write!(f, "{}: {}", "info_hash", self.info_hash())?;
-        write!(f, ", {}: {}", "bytes", self.bytes())?;
+        write!(f, ", {}: {}", "data", self.data())?;
         let extra_count = self.count_extra_fields();
         if extra_count != 0 {
             write!(f, ", .. ({} fields)", extra_count)?;
@@ -667,7 +667,7 @@ impl<'r> ActionReader<'r> {
         let end = molecule::unpack_number(&slice[8..]) as usize;
         Byte32Reader::new_unchecked(&self.as_slice()[start..end])
     }
-    pub fn bytes(&self) -> BytesReader<'r> {
+    pub fn data(&self) -> BytesReader<'r> {
         let slice = self.as_slice();
         let start = molecule::unpack_number(&slice[8..]) as usize;
         if self.has_extra_fields() {
@@ -732,7 +732,7 @@ impl<'r> molecule::prelude::Reader<'r> for ActionReader<'r> {
 #[derive(Debug, Default)]
 pub struct ActionBuilder {
     pub(crate) info_hash: Byte32,
-    pub(crate) bytes: Bytes,
+    pub(crate) data: Bytes,
 }
 impl ActionBuilder {
     pub const FIELD_COUNT: usize = 2;
@@ -740,8 +740,8 @@ impl ActionBuilder {
         self.info_hash = v;
         self
     }
-    pub fn bytes(mut self, v: Bytes) -> Self {
-        self.bytes = v;
+    pub fn data(mut self, v: Bytes) -> Self {
+        self.data = v;
         self
     }
 }
@@ -751,7 +751,7 @@ impl molecule::prelude::Builder for ActionBuilder {
     fn expected_length(&self) -> usize {
         molecule::NUMBER_SIZE * (Self::FIELD_COUNT + 1)
             + self.info_hash.as_slice().len()
-            + self.bytes.as_slice().len()
+            + self.data.as_slice().len()
     }
     fn write<W: molecule::io::Write>(&self, writer: &mut W) -> molecule::io::Result<()> {
         let mut total_size = molecule::NUMBER_SIZE * (Self::FIELD_COUNT + 1);
@@ -759,13 +759,13 @@ impl molecule::prelude::Builder for ActionBuilder {
         offsets.push(total_size);
         total_size += self.info_hash.as_slice().len();
         offsets.push(total_size);
-        total_size += self.bytes.as_slice().len();
+        total_size += self.data.as_slice().len();
         writer.write_all(&molecule::pack_number(total_size as molecule::Number))?;
         for offset in offsets.into_iter() {
             writer.write_all(&molecule::pack_number(offset as molecule::Number))?;
         }
         writer.write_all(self.info_hash.as_slice())?;
-        writer.write_all(self.bytes.as_slice())?;
+        writer.write_all(self.data.as_slice())?;
         Ok(())
     }
     fn build(&self) -> Self::Entity {
