@@ -143,7 +143,7 @@ export const config: SporeConfig<PredefinedSporeConfigScriptName> = {
             cellDep: {
                 outPoint: {
                     txHash: '0x769d127f11d81e8f6e8aefd45ea4fe8a32e9d84e70ec1267170c6db82b9796f0',
-                    index: '0x0',
+                    index: '0x1',
                 },
                 depType: 'code',
             },
@@ -152,3 +152,31 @@ export const config: SporeConfig<PredefinedSporeConfigScriptName> = {
     },
     extensions: [],
 };
+
+export const configAuth = {
+    script: {
+        codeHash: '0x9017dadb5493e6317da3bab8a1456851d45043ff701d6455a03abdabcad99e3e',
+        hashType: 'data1',
+    },
+    cellDep: {
+        outPoint: {
+            txHash: '0x27ce6f8e9032d40334948904b5a769587eaf0d8e79e1b51a80c9ba0616e102f2',
+            index: '0x0',
+        },
+        depType: 'code'
+    }
+}
+
+export const configTypedMessageLockDemo = {
+    script: {
+        codeHash: '0xcf37fcee5e82ead0393c3aad78a7560a6f242fcc7d64aa2e6324de875ef1f2d5',
+        hashType: 'data1',
+    },
+    cellDep: {
+        outPoint: {
+            txHash: '0x27ce6f8e9032d40334948904b5a769587eaf0d8e79e1b51a80c9ba0616e102f2',
+            index: '0x1',
+        },
+        depType: 'code'
+    }
+}
