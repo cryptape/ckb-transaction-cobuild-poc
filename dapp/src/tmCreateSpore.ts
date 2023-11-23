@@ -1,6 +1,7 @@
 import { createSpore } from '@spore-sdk/core';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
+import { config } from './tmConfig';
 import { accounts } from './tmWallet';
 
 export async function fetchLocalFile(src: string) {
@@ -16,6 +17,7 @@ export async function main() {
         },
         toLock: accounts.alice.lock,
         fromInfos: [accounts.alice.address],
+        config: config,
     });
     const hash = await accounts.alice.signAndSendTransaction(txSkeleton);
     console.log(`Spore created at: https://pudge.explorer.nervos.org/transaction/${hash}`);

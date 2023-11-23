@@ -4,8 +4,9 @@ import { bytes } from "@ckb-lumos/codec";
 import { Config } from "@ckb-lumos/config-manager";
 import { TransactionSkeletonType, createTransactionFromSkeleton } from "@ckb-lumos/helpers";
 import { RPC, hd, helpers } from '@ckb-lumos/lumos';
-import { defaultEmptyWitnessArgs, getSporeConfig, isScriptValueEquals, updateWitnessArgs } from '@spore-sdk/core';
+import { defaultEmptyWitnessArgs, isScriptValueEquals, updateWitnessArgs } from '@spore-sdk/core';
 import { Set } from "immutable";
+import { config } from './tmConfig';
 
 const { CKBHasher, ckbHash } = utils;
 
@@ -105,8 +106,6 @@ export interface Wallet {
  * providing lock/address, and functions to sign message/transaction and send the transaction on-chain.
  */
 export function createDefaultLockWallet(privateKey: HexString): Wallet {
-  const config = getSporeConfig();
-
   // Generate a lock script from the private key
   const Secp256k1Blake160 = config.lumos.SCRIPTS['SECP256K1_BLAKE160']!;
   const lock: Script = {
@@ -182,6 +181,6 @@ export function createDefaultLockWallet(privateKey: HexString): Wallet {
 }
 
 export const accounts = {
-  alice: createDefaultLockWallet('0x49aa6d595ac46cc8e1a31b511754dd58f241a7d8a6ad29e83d6b0c1a82399f3d'),
-  bob: createDefaultLockWallet('0xc153ee57dc8ae3dac3495c828d6f8c3fef6b1d0c74fc31101c064137b3269d6d'),
+  alice: createDefaultLockWallet('0x0000000000000000000000000000000000000000000000000000000000000001'),
+  bob: createDefaultLockWallet('0x0000000000000000000000000000000000000000000000000000000000000002'),
 };
