@@ -1,4 +1,5 @@
 import { createConfig } from '@ckb-lumos/config-manager';
+import { HashType } from '@ckb-lumos/base';
 import { SporeConfig, PredefinedSporeConfigScriptName } from '@spore-sdk/core';
 
 // export const config: SporeConfig<PredefinedSporeConfigScriptName> = {
@@ -156,7 +157,7 @@ export const config: SporeConfig<PredefinedSporeConfigScriptName> = {
 export const configAuth = {
     script: {
         codeHash: '0x9017dadb5493e6317da3bab8a1456851d45043ff701d6455a03abdabcad99e3e',
-        hashType: 'data1',
+        hashType: 'data1' as HashType,
     },
     cellDep: {
         outPoint: {
@@ -170,7 +171,7 @@ export const configAuth = {
 export const configTypedMessageLockDemo = {
     script: {
         codeHash: '0xcf37fcee5e82ead0393c3aad78a7560a6f242fcc7d64aa2e6324de875ef1f2d5',
-        hashType: 'data1',
+        hashType: 'data1' as HashType,
     },
     cellDep: {
         outPoint: {

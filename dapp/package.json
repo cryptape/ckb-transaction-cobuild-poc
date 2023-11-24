@@ -3,11 +3,11 @@
   "version": "0.1.0",
   "license": "MIT",
   "scripts": {
-    "rawCreateImmortalSpore": "ts-node src/rawCreateImmortalSpore.ts",
-    "rawCreatePrivateCluster": "ts-node src/rawCreatePrivateCluster.ts",
-    "rawCreateSpore": "ts-node src/rawCreateSpore.ts",
-    "rawCreateSporeWithCluster": "ts-node src/rawCreateSporeWithCluster.ts",
-    "rawTransferSpore": "ts-node src/rawTransferSpore.ts",
+    "skCreateImmortalSpore": "ts-node src/skCreateImmortalSpore.ts",
+    "skCreatePrivateCluster": "ts-node src/skCreatePrivateCluster.ts",
+    "skCreateSpore": "ts-node src/skCreateSpore.ts",
+    "skCreateSporeWithCluster": "ts-node src/skCreateSporeWithCluster.ts",
+    "skTransferSpore": "ts-node src/skTransferSpore.ts",
     "tmCreateSpore": "ts-node src/tmCreateSpore.ts",
     "tmTransferSpore": "ts-node src/tmTransferSpore.ts"
   },
