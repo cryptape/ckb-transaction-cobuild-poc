@@ -8,8 +8,9 @@ use blake2b::new_blake2b;
 use ckb_std::{
     ckb_constants::Source,
     error::SysError,
-    high_level::{load_input_since, load_tx_hash, load_witness},
+    high_level::{load_input_since, load_tx_hash, load_witness, QueryIter},
 };
+use core::convert::Into;
 use molecule::{
     error::VerificationError,
     prelude::{Entity, Reader},
@@ -24,9 +25,9 @@ use schemas::{
 #[derive(Eq, PartialEq, Debug, Clone, Copy)]
 pub enum Error {
     Sys(SysError),
-    DuplicateAction,
     MoleculeEncoding,
     WrongSighashWithAction,
+    WrongWitnessLayout,
 }
 
 impl From<SysError> for Error {
@@ -38,36 +39,6 @@ impl From<SysError> for Error {
 impl From<VerificationError> for Error {
     fn from(_: VerificationError) -> Self {
         Error::MoleculeEncoding
-    }
-}
-///
-/// A single transaction must have only one SighashWithAction
-///
-pub fn check_sighash_with_action() -> Result<(), Error> {
-    let mut i = 0;
-    let mut found = false;
-    loop {
-        match load_witness(i, Source::Input) {
-            Ok(witness) => {
-                if let Ok(r) = ExtendedWitnessReader::from_slice(&witness) {
-                    if let ExtendedWitnessUnionReader::SighashWithAction(_) = r.to_enum() {
-                        if found {
-                            return Err(Error::DuplicateAction);
-                        } else {
-                            found = true;
-                        }
-                    }
-                }
-            }
-            Err(SysError::IndexOutOfBound) => break,
-            Err(e) => return Err(e.into()),
-        }
-        i += 1;
-    }
-    if found {
-        return Ok(());
-    } else {
-        return Err(Error::WrongSighashWithAction);
     }
 }
 
@@ -93,31 +64,41 @@ pub fn fetch_sighash() -> Result<ExtendedWitness, Error> {
 }
 
 ///
-/// Search the only SighashWithAction from all witnesses.
+/// fetch the only SighashWithAction from all witnesses.
+/// This function can also check the count of SighashWithAction is one.
 ///
-pub fn search_sighash_with_action() -> Result<SighashWithAction, Error> {
-    let mut i = 0;
+pub fn fetch_sighash_with_action() -> Result<SighashWithAction, Error> {
     let mut result = None;
-    // Look for the first SighashWithAction witness
-    while result.is_none() {
-        match load_witness(i, Source::Input) {
-            Ok(witness) => {
-                if let Ok(r) = ExtendedWitnessReader::from_slice(&witness) {
-                    if let ExtendedWitnessUnionReader::SighashWithAction(s) = r.to_enum() {
-                        result = Some(s.to_entity());
-                    }
+
+    for witness in QueryIter::new(load_witness, Source::Input) {
+        if let Ok(r) = ExtendedWitnessReader::from_slice(&witness) {
+            if let ExtendedWitnessUnionReader::SighashWithAction(s) = r.to_enum() {
+                if result.is_some() {
+                    return Err(Error::WrongSighashWithAction);
+                } else {
+                    result = Some(s.to_entity());
                 }
             }
-            Err(SysError::IndexOutOfBound) => break,
-            Err(e) => return Err(e.into()),
-        };
-        i += 1;
+        }
     }
     if result.is_some() {
         return Ok(result.unwrap());
     } else {
         return Err(Error::WrongSighashWithAction);
     }
+}
+
+///
+/// for lock script with typed message, the other witness in script group except
+/// first one should be empty
+///
+pub fn check_others_in_group() -> Result<(), Error> {
+    for witness in QueryIter::new(load_witness, Source::GroupInput).skip(1) {
+        if witness.as_slice().len() != 0 {
+            return Err(Error::WrongWitnessLayout);
+        }
+    }
+    Ok(())
 }
 
 //
@@ -207,22 +188,19 @@ fn calculate_inputs_len() -> Result<usize, SysError> {
 /// This function is mainly used by lock script
 ///
 pub fn parse_typed_message() -> Result<([u8; 32], Vec<u8>), Error> {
+    check_others_in_group()?;
     // Ensure that a SighashWitAction is present throughout the entire transaction
-    check_sighash_with_action()?;
+    let sighash_with_action = fetch_sighash_with_action()?;
     // There are 2 possible values: Sighash or SighashWithAction
     let witness = fetch_sighash()?;
     let (lock, typed_message) = match witness.to_enum() {
         ExtendedWitnessUnion::SighashWithAction(s) => (s.lock(), s.message()),
-        ExtendedWitnessUnion::Sighash(s) => {
-            let sighash_with_action = search_sighash_with_action()?;
-            (s.lock(), sighash_with_action.message())
-        }
+        ExtendedWitnessUnion::Sighash(s) => (s.lock(), sighash_with_action.message()),
         _ => {
             return Err(Error::WrongSighashWithAction);
         }
     };
     let skeleton_hash = generate_skeleton_hash()?;
     let digest_message = generate_final_hash(&skeleton_hash, typed_message.as_slice());
-    let lock = lock.as_slice();
-    Ok((digest_message, lock.to_vec()))
+    Ok((digest_message, lock.raw_data().into()))
 }
