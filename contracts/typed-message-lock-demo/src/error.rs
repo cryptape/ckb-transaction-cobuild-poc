@@ -11,6 +11,7 @@ pub enum Error {
     // Add customized errors here...
     AuthError,
     WrongSighashWithAction,
+    WrongWitnessLayout,
 }
 
 impl From<SysError> for Error {
@@ -30,9 +31,9 @@ impl From<ckb_typed_message::Error> for Error {
     fn from(err: ckb_typed_message::Error) -> Self {
         match err {
             ckb_typed_message::Error::Sys(e) => e.into(),
-            ckb_typed_message::Error::DuplicateAction => Error::WrongSighashWithAction,
             ckb_typed_message::Error::MoleculeEncoding => Error::Encoding,
             ckb_typed_message::Error::WrongSighashWithAction => Error::WrongSighashWithAction,
+            ckb_typed_message::Error::WrongWitnessLayout => Error::WrongWitnessLayout,
         }
     }
 }
