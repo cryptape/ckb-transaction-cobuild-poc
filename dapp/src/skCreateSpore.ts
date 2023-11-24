@@ -1,7 +1,7 @@
 import { createSpore } from '@spore-sdk/core';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
-import { accounts } from './rawWallet';
+import { accounts } from './skWallet';
 
 export async function fetchLocalFile(src: string) {
     const buffer = readFileSync(resolve(__dirname, src));

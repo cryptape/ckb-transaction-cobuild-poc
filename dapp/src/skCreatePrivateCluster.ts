@@ -1,5 +1,5 @@
 import { createCluster } from '@spore-sdk/core';
-import { accounts } from './rawWallet';
+import { accounts } from './skWallet';
 
 export async function main() {
     let { txSkeleton, outputIndex } = await createCluster({
