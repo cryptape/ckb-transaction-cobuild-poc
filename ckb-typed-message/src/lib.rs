@@ -10,6 +10,7 @@ use ckb_std::{
     error::SysError,
     high_level::{load_input_since, load_tx_hash, load_witness, QueryIter},
 };
+use core::convert::Into;
 use molecule::{
     error::VerificationError,
     prelude::{Entity, Reader},
@@ -201,6 +202,5 @@ pub fn parse_typed_message() -> Result<([u8; 32], Vec<u8>), Error> {
     };
     let skeleton_hash = generate_skeleton_hash()?;
     let digest_message = generate_final_hash(&skeleton_hash, typed_message.as_slice());
-    let lock = lock.as_slice();
-    Ok((digest_message, lock.to_vec()))
+    Ok((digest_message, lock.raw_data().into()))
 }
