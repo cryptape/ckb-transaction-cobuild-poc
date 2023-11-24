@@ -2,7 +2,7 @@ import { createSpore } from '@spore-sdk/core';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import { config } from './tmConfig';
-import { accounts } from './tmWallet';
+import { skAccounts, tmAccounts } from './tmWallet';
 
 export async function fetchLocalFile(src: string) {
     const buffer = readFileSync(resolve(__dirname, src));
@@ -15,11 +15,11 @@ export async function main() {
             contentType: 'image/jpeg',
             content: await fetchLocalFile('../res/nervos.jpg'),
         },
-        toLock: accounts.alice.lock,
-        fromInfos: [accounts.alice.address],
+        toLock: tmAccounts.alice.lock,
+        fromInfos: [skAccounts.alice.address],
         config: config,
     });
-    const hash = await accounts.alice.signAndSendTransaction(txSkeleton);
+    const hash = await skAccounts.alice.signAndSendTransaction(txSkeleton);
     console.log(`Spore created at: https://pudge.explorer.nervos.org/transaction/${hash}`);
     let sporeID = txSkeleton.get('outputs').get(outputIndex)!.cellOutput.type!.args;
     console.log(`Spore ID: ${sporeID}`);
