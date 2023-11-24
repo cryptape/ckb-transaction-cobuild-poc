@@ -6,6 +6,8 @@ union Address {
     Script,
 }
 
+option AddressOpt (Address);
+
 table Action {
     info_hash: Byte32,
     data: Bytes,
