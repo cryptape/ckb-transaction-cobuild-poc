@@ -513,6 +513,170 @@ impl<'r> AddressUnionReader<'r> {
     }
 }
 #[derive(Clone)]
+pub struct AddressOpt(molecule::bytes::Bytes);
+impl ::core::fmt::LowerHex for AddressOpt {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        use molecule::hex_string;
+        if f.alternate() {
+            write!(f, "0x")?;
+        }
+        write!(f, "{}", hex_string(self.as_slice()))
+    }
+}
+impl ::core::fmt::Debug for AddressOpt {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{}({:#x})", Self::NAME, self)
+    }
+}
+impl ::core::fmt::Display for AddressOpt {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        if let Some(v) = self.to_opt() {
+            write!(f, "{}(Some({}))", Self::NAME, v)
+        } else {
+            write!(f, "{}(None)", Self::NAME)
+        }
+    }
+}
+impl ::core::default::Default for AddressOpt {
+    fn default() -> Self {
+        let v = molecule::bytes::Bytes::from_static(&Self::DEFAULT_VALUE);
+        AddressOpt::new_unchecked(v)
+    }
+}
+impl AddressOpt {
+    const DEFAULT_VALUE: [u8; 0] = [];
+    pub fn is_none(&self) -> bool {
+        self.0.is_empty()
+    }
+    pub fn is_some(&self) -> bool {
+        !self.0.is_empty()
+    }
+    pub fn to_opt(&self) -> Option<Address> {
+        if self.is_none() {
+            None
+        } else {
+            Some(Address::new_unchecked(self.0.clone()))
+        }
+    }
+    pub fn as_reader<'r>(&'r self) -> AddressOptReader<'r> {
+        AddressOptReader::new_unchecked(self.as_slice())
+    }
+}
+impl molecule::prelude::Entity for AddressOpt {
+    type Builder = AddressOptBuilder;
+    const NAME: &'static str = "AddressOpt";
+    fn new_unchecked(data: molecule::bytes::Bytes) -> Self {
+        AddressOpt(data)
+    }
+    fn as_bytes(&self) -> molecule::bytes::Bytes {
+        self.0.clone()
+    }
+    fn as_slice(&self) -> &[u8] {
+        &self.0[..]
+    }
+    fn from_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
+        AddressOptReader::from_slice(slice).map(|reader| reader.to_entity())
+    }
+    fn from_compatible_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
+        AddressOptReader::from_compatible_slice(slice).map(|reader| reader.to_entity())
+    }
+    fn new_builder() -> Self::Builder {
+        ::core::default::Default::default()
+    }
+    fn as_builder(self) -> Self::Builder {
+        Self::new_builder().set(self.to_opt())
+    }
+}
+#[derive(Clone, Copy)]
+pub struct AddressOptReader<'r>(&'r [u8]);
+impl<'r> ::core::fmt::LowerHex for AddressOptReader<'r> {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        use molecule::hex_string;
+        if f.alternate() {
+            write!(f, "0x")?;
+        }
+        write!(f, "{}", hex_string(self.as_slice()))
+    }
+}
+impl<'r> ::core::fmt::Debug for AddressOptReader<'r> {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{}({:#x})", Self::NAME, self)
+    }
+}
+impl<'r> ::core::fmt::Display for AddressOptReader<'r> {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        if let Some(v) = self.to_opt() {
+            write!(f, "{}(Some({}))", Self::NAME, v)
+        } else {
+            write!(f, "{}(None)", Self::NAME)
+        }
+    }
+}
+impl<'r> AddressOptReader<'r> {
+    pub fn is_none(&self) -> bool {
+        self.0.is_empty()
+    }
+    pub fn is_some(&self) -> bool {
+        !self.0.is_empty()
+    }
+    pub fn to_opt(&self) -> Option<AddressReader<'r>> {
+        if self.is_none() {
+            None
+        } else {
+            Some(AddressReader::new_unchecked(self.as_slice()))
+        }
+    }
+}
+impl<'r> molecule::prelude::Reader<'r> for AddressOptReader<'r> {
+    type Entity = AddressOpt;
+    const NAME: &'static str = "AddressOptReader";
+    fn to_entity(&self) -> Self::Entity {
+        Self::Entity::new_unchecked(self.as_slice().to_owned().into())
+    }
+    fn new_unchecked(slice: &'r [u8]) -> Self {
+        AddressOptReader(slice)
+    }
+    fn as_slice(&self) -> &'r [u8] {
+        self.0
+    }
+    fn verify(slice: &[u8], compatible: bool) -> molecule::error::VerificationResult<()> {
+        if !slice.is_empty() {
+            AddressReader::verify(&slice[..], compatible)?;
+        }
+        Ok(())
+    }
+}
+#[derive(Debug, Default)]
+pub struct AddressOptBuilder(pub(crate) Option<Address>);
+impl AddressOptBuilder {
+    pub fn set(mut self, v: Option<Address>) -> Self {
+        self.0 = v;
+        self
+    }
+}
+impl molecule::prelude::Builder for AddressOptBuilder {
+    type Entity = AddressOpt;
+    const NAME: &'static str = "AddressOptBuilder";
+    fn expected_length(&self) -> usize {
+        self.0
+            .as_ref()
+            .map(|ref inner| inner.as_slice().len())
+            .unwrap_or(0)
+    }
+    fn write<W: molecule::io::Write>(&self, writer: &mut W) -> molecule::io::Result<()> {
+        self.0
+            .as_ref()
+            .map(|ref inner| writer.write_all(inner.as_slice()))
+            .unwrap_or(Ok(()))
+    }
+    fn build(&self) -> Self::Entity {
+        let mut inner = Vec::with_capacity(self.expected_length());
+        self.write(&mut inner)
+            .unwrap_or_else(|_| panic!("{} build should be ok", Self::NAME));
+        AddressOpt::new_unchecked(inner.into())
+    }
+}
+#[derive(Clone)]
 pub struct Action(molecule::bytes::Bytes);
 impl ::core::fmt::LowerHex for Action {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {

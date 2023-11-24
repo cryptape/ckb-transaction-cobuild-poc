@@ -1,0 +1,24 @@
+import blockchain;
+import basic;
+
+table Mint {
+    id: Byte32,
+    to: Address,
+    content_hash: Byte32,
+}
+
+table Transfer {
+    nft_id: Byte32,
+    from: AddressOpt,
+    to: AddressOpt,
+}
+
+table Melt {
+    id: Byte32,
+}
+
+union SporeAction {
+    Mint,
+    Transfer,
+    Melt,
+}
