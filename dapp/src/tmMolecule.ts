@@ -14,6 +14,8 @@ export const Address = union(
     ["Script"]
 );
 
+export const AddressOpt = option(Address);
+
 export const Action = table(
     { infoHash: blockchain.Byte32, data: blockchain.Bytes },
     ["infoHash", "data"]
@@ -98,4 +100,24 @@ export const Otx = table(
         message: TypedMessage,
     },
     ["lock", "inputCells", "outputCells", "cellDeps", "headerDeps", "message"]
+)
+
+export const Mint = table(
+    { id: blockchain.Byte32, to: Address, contentHash: blockchain.Byte32 },
+    ["id", "to", "contentHash"]
+)
+
+export const Transfer = table(
+    { nftID: blockchain.Byte32, from: AddressOpt, to: AddressOpt },
+    ["nftID", "from", "to"]
+)
+
+export const Melt = table(
+    { id: blockchain.Byte32 },
+    ["id"]
+)
+
+export const SporeAction = union(
+    { Mint, Transfer, Melt },
+    ["Mint", "Transfer", "Melt"]
 )
