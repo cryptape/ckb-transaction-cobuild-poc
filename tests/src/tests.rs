@@ -1,10 +1,5 @@
 use super::tx::*;
 use ckb_testtool::ckb_error::Error;
-use ckb_testtool::ckb_types::prelude::*;
-use ckb_typed_message::schemas::{
-    basic::{Otx, OtxStart},
-    top_level::{ExtendedWitness, ExtendedWitnessUnion},
-};
 
 const MAX_CYCLES: u64 = 10_000_000;
 
@@ -21,16 +16,7 @@ fn _assert_script_error(err: Error, err_code: i8) {
 
 #[test]
 fn test_success() {
-    let others_witnesses = vec![
-        ExtendedWitness::new_builder()
-            .set(ExtendedWitnessUnion::OtxStart(
-                OtxStart::new_builder().build().into(),
-            ))
-            .build(),
-        ExtendedWitness::new_builder()
-            .set(ExtendedWitnessUnion::Otx(Otx::new_builder().build().into()))
-            .build(),
-    ];
+    let others_witnesses = vec![];
 
     let mut witnesses = TypedMsgWitnesses::new(vec![3, 1, 2], others_witnesses);
     witnesses.set_with_action(1);
