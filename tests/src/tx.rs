@@ -23,6 +23,8 @@ pub struct TypedMsgData {
     pub group_size: usize,
     pub action: Option<TypedMessage>,
     pub sign: Option<Vec<u8>>,
+
+    pub config_failed_pubkey_hash: bool,
 }
 impl TypedMsgData {
     pub fn new(group_size: usize) -> Self {
@@ -40,6 +42,8 @@ impl TypedMsgData {
             group_size,
             action: None,
             sign: None,
+
+            config_failed_pubkey_hash: false,
         }
     }
 
@@ -77,6 +81,14 @@ impl TypedMsgData {
                 .build(),
         }
     }
+
+    pub fn update_config(&mut self) {
+        if self.config_failed_pubkey_hash {
+            let mut buf = [0u8; 20];
+            thread_rng().fill_bytes(&mut buf);
+            self.pubkey_hash = buf;
+        }
+    }
 }
 
 pub struct TypedMsgWitnesses {
@@ -93,6 +105,12 @@ impl TypedMsgWitnesses {
         Self {
             typed_msg_datas,
             others,
+        }
+    }
+
+    pub fn update(&mut self) {
+        for d in &mut self.typed_msg_datas {
+            d.update_config();
         }
     }
 
