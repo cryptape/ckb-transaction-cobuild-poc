@@ -1,5 +1,5 @@
 import { createConfig } from '@ckb-lumos/config-manager';
-import { HashType } from '@ckb-lumos/base';
+import { HashType, DepType } from '@ckb-lumos/base';
 import { SporeConfig, PredefinedSporeConfigScriptName } from '@spore-sdk/core';
 
 // export const config: SporeConfig<PredefinedSporeConfigScriptName> = {
@@ -164,20 +164,20 @@ export const configAuth = {
             txHash: '0x27ce6f8e9032d40334948904b5a769587eaf0d8e79e1b51a80c9ba0616e102f2',
             index: '0x0',
         },
-        depType: 'code'
+        depType: 'code' as DepType,
     }
 }
 
 export const configTypedMessageLockDemo = {
     script: {
-        codeHash: '0xcf37fcee5e82ead0393c3aad78a7560a6f242fcc7d64aa2e6324de875ef1f2d5',
+        codeHash: '0x81046990df3542a0563555af6b863fa4ec8d1d60d77ed8d654d981c7c015f6b2',
         hashType: 'data1' as HashType,
     },
     cellDep: {
         outPoint: {
-            txHash: '0x27ce6f8e9032d40334948904b5a769587eaf0d8e79e1b51a80c9ba0616e102f2',
-            index: '0x1',
+            txHash: '0x068660a7f5d97f6e4adf34983c5223a02b2caf0bc139d083ab9244c4dc309da9',
+            index: '0x0',
         },
-        depType: 'code'
+        depType: 'code' as DepType,
     }
 }

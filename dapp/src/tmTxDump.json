@@ -1,0 +1,217 @@
+{
+    "mock_info": {
+        "inputs": [
+            {
+                "input": {
+                    "since": "0x0",
+                    "previous_output": {
+                        "tx_hash": "0x16bd44f98150c03249f679877e147c4aee2b97557eaab3c16ce5906a5929b4be",
+                        "index": "0x0"
+                    }
+                },
+                "output": {
+                    "capacity": "0xd3f811900",
+                    "lock": {
+                        "code_hash": "0x{{ ref_type typed-message-lock-demo }}",
+                        "hash_type": "type",
+                        "args": "0x75178f34549c5fe9cd1a0c57aebd01e7ddf9249e"
+                    },
+                    "type": {
+                        "code_hash": "0xbbad126377d45f90a8ee120da988a2d7332c78ba8fd679aab478a19d6c133494",
+                        "hash_type": "data1",
+                        "args": "0xa364d19b789a702571584c75acf4a74dc3a332f3d4baa9b0ece8586a815108dc"
+                    }
+                },
+                "data": "0xba010000100000001e000000ba0100000a000000696d6167652f6a70656798010000ffd8ffe000104a46494600010101004800480000ffdb0043000a07070807060a0808080b0a0a0b0e18100e0d0d0e1d15161118231f2524221f2221262b372f26293429212230413134393b3e3e3e252e4449433c48373d3e3bffdb0043010a0b0b0e0d0e1c10101c3b2822283b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3bffc0001108000a000a03012200021101031101ffc4001500010100000000000000000000000000000407ffc4001f1000030002020301010000000000000000010203040500110621314114ffc40014010100000000000000000000000000000000ffc40014110100000000000000000000000000000000ffda000c03010002110311003f0064773b5c2d6f9b6c2db3cc7c76ced8e1499eec7f8dd10b40a127a9a92ce9ebd9631007de50fc4ed5c9f0ed2def57ad6baf83d28ec599d8cd49249fa49fde29f4daaa62e462beb30db1f2aa6d91230529672412cc3ae99bb00f67dfa1c4c632c684e10924a5250939a28554503a0001f001f9c0ffd9",
+                "header": null
+            }
+        ],
+        "cell_deps": [
+            {
+                "cell_dep": {
+                    "out_point": {
+                        "tx_hash": "0x44b3212de8c8b1aaabf241c3526bf44264e8acbda0cb9ac353d4bd07fc34021e",
+                        "index": "0x3"
+                    },
+                    "dep_type": "code"
+                },
+                "output": {
+                    "capacity": "0x3b9b62bca5a00",
+                    "lock": {
+                        "code_hash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+                        "hash_type": "data",
+                        "args": "0x"
+                    },
+                    "type": null
+                },
+                "data": "0x{{ data ./binSecp256k1Index3 }}",
+                "header": null
+            },
+            {
+                "cell_dep": {
+                    "out_point": {
+                        "tx_hash": "0x44b3212de8c8b1aaabf241c3526bf44264e8acbda0cb9ac353d4bd07fc34021e",
+                        "index": "0x1"
+                    },
+                    "dep_type": "code"
+                },
+                "output": {
+                    "capacity": "0x5af3107a4000",
+                    "lock": {
+                        "code_hash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+                        "hash_type": "data",
+                        "args": "0x"
+                    },
+                    "type": null
+                },
+                "data": "0x{{ data ./binSecp256k1Index1 }}",
+                "header": null
+            },
+            {
+                "cell_dep": {
+                    "out_point": {
+                        "tx_hash": "0x94dfbac7f4ccb5b1f41b1cc314abae9df3f85108af214c5aaff569c8ada0885e",
+                        "index": "0x0"
+                    },
+                    "dep_type": "dep_group"
+                },
+                "output": {
+                    "capacity": "0x1b3dbe5200",
+                    "lock": {
+                        "code_hash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+                        "hash_type": "data",
+                        "args": "0x"
+                    },
+                    "type": null
+                },
+                "data": "0x0200000044b3212de8c8b1aaabf241c3526bf44264e8acbda0cb9ac353d4bd07fc34021e0300000044b3212de8c8b1aaabf241c3526bf44264e8acbda0cb9ac353d4bd07fc34021e01000000",
+                "header": null
+            },
+            {
+                "cell_dep": {
+                    "out_point": {
+                        "tx_hash": "0x27ce6f8e9032d40334948904b5a769587eaf0d8e79e1b51a80c9ba0616e102f2",
+                        "index": "0x0"
+                    },
+                    "dep_type": "code"
+                },
+                "output": {
+                    "capacity": "0x80048afc1200",
+                    "lock": {
+                        "code_hash": "0x9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8",
+                        "hash_type": "type",
+                        "args": "0x75178f34549c5fe9cd1a0c57aebd01e7ddf9249e"
+                    },
+                    "type": null
+                },
+                "data": "0x{{ data ../../build/auth }}",
+                "header": null
+            },
+            {
+                "cell_dep": {
+                    "out_point": {
+                        "tx_hash": "0x27ce6f8e9032d40334948904b5a769587eaf0d8e79e1b51a80c9ba0616e102f2",
+                        "index": "0x1"
+                    },
+                    "dep_type": "code"
+                },
+                "output": {
+                    "capacity": "0x374217671200",
+                    "lock": {
+                        "code_hash": "0x9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8",
+                        "hash_type": "type",
+                        "args": "0x75178f34549c5fe9cd1a0c57aebd01e7ddf9249e"
+                    },
+                    "type": "{{ def_type typed-message-lock-demo }}"
+                },
+                "data": "0x{{ data ../../build/release/typed-message-lock-demo }}",
+                "header": null
+            },
+            {
+                "cell_dep": {
+                    "out_point": {
+                        "tx_hash": "0x769d127f11d81e8f6e8aefd45ea4fe8a32e9d84e70ec1267170c6db82b9796f0",
+                        "index": "0x0"
+                    },
+                    "dep_type": "code"
+                },
+                "output": {
+                    "capacity": "0x310b64783200",
+                    "lock": {
+                        "code_hash": "0x9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8",
+                        "hash_type": "type",
+                        "args": "0x75178f34549c5fe9cd1a0c57aebd01e7ddf9249e"
+                    },
+                    "type": null
+                },
+                "data": "0x{{ data ./binSpore }}",
+                "header": null
+            }
+        ],
+        "header_deps": []
+    },
+    "tx": {
+        "version": "0x0",
+        "cell_deps": [
+            {
+                "out_point": {
+                    "tx_hash": "0x94dfbac7f4ccb5b1f41b1cc314abae9df3f85108af214c5aaff569c8ada0885e",
+                    "index": "0x0"
+                },
+                "dep_type": "dep_group"
+            },
+            {
+                "out_point": {
+                    "tx_hash": "0x27ce6f8e9032d40334948904b5a769587eaf0d8e79e1b51a80c9ba0616e102f2",
+                    "index": "0x0"
+                },
+                "dep_type": "code"
+            },
+            {
+                "out_point": {
+                    "tx_hash": "0x27ce6f8e9032d40334948904b5a769587eaf0d8e79e1b51a80c9ba0616e102f2",
+                    "index": "0x1"
+                },
+                "dep_type": "code"
+            },
+            {
+                "out_point": {
+                    "tx_hash": "0x769d127f11d81e8f6e8aefd45ea4fe8a32e9d84e70ec1267170c6db82b9796f0",
+                    "index": "0x0"
+                },
+                "dep_type": "code"
+            }
+        ],
+        "header_deps": [],
+        "inputs": [
+            {
+                "since": "0x0",
+                "previous_output": {
+                    "tx_hash": "0x16bd44f98150c03249f679877e147c4aee2b97557eaab3c16ce5906a5929b4be",
+                    "index": "0x0"
+                }
+            }
+        ],
+        "outputs": [
+            {
+                "capacity": "0xd3f8114b2",
+                "lock": {
+                    "code_hash": "0xcf37fcee5e82ead0393c3aad78a7560a6f242fcc7d64aa2e6324de875ef1f2d5",
+                    "hash_type": "data1",
+                    "args": "0xa3c778981c19e1dcc611fb2132dcdaac075a5064"
+                },
+                "type": {
+                    "code_hash": "0xbbad126377d45f90a8ee120da988a2d7332c78ba8fd679aab478a19d6c133494",
+                    "hash_type": "data1",
+                    "args": "0xa364d19b789a702571584c75acf4a74dc3a332f3d4baa9b0ece8586a815108dc"
+                }
+            }
+        ],
+        "outputs_data": [
+            "0xba010000100000001e000000ba0100000a000000696d6167652f6a70656798010000ffd8ffe000104a46494600010101004800480000ffdb0043000a07070807060a0808080b0a0a0b0e18100e0d0d0e1d15161118231f2524221f2221262b372f26293429212230413134393b3e3e3e252e4449433c48373d3e3bffdb0043010a0b0b0e0d0e1c10101c3b2822283b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3bffc0001108000a000a03012200021101031101ffc4001500010100000000000000000000000000000407ffc4001f1000030002020301010000000000000000010203040500110621314114ffc40014010100000000000000000000000000000000ffc40014110100000000000000000000000000000000ffda000c03010002110311003f0064773b5c2d6f9b6c2db3cc7c76ced8e1499eec7f8dd10b40a127a9a92ce9ebd9631007de50fc4ed5c9f0ed2def57ad6baf83d28ec599d8cd49249fa49fde29f4daaa62e462beb30db1f2aa6d91230529672412cc3ae99bb00f67dfa1c4c632c684e10924a5250939a28554503a0001f001f9c0ffd9"
+        ],
+        "witnesses": [
+            "0x010000ffbe0000000c0000005100000041000000fe8b97eb781996a7859049124fe1b5e15ac850f0675fd783f304e2a04d717402662432e51f30978ffe1a99442db4e5b290119f5fcfbe1b773022d2656e46640201000000006900000008000000610000000c0000002c0000000000000000000000000000000000000000000000000000000000000000000000350000000c0000002c0000000000000000000000000000000000000000000000000000000000000000000000050000001234567890"
+        ]
+    }
+}

@@ -1,13 +1,15 @@
 import { Address, Hash, HexString, Script, blockchain, utils, values } from '@ckb-lumos/base';
 import { BI } from "@ckb-lumos/bi";
-import { bytes } from "@ckb-lumos/codec";
+import { UnpackResult, bytes, number } from "@ckb-lumos/codec";
 import { secp256k1Blake160 } from '@ckb-lumos/common-scripts';
 import { Config } from "@ckb-lumos/config-manager";
 import { TransactionSkeletonType, createTransactionFromSkeleton } from "@ckb-lumos/helpers";
 import { RPC, hd, helpers } from '@ckb-lumos/lumos';
 import { defaultEmptyWitnessArgs, isScriptValueEquals, updateWitnessArgs } from '@spore-sdk/core';
-import { Set } from "immutable";
+import { List, Set } from "immutable";
 import { config, configTypedMessageLockDemo } from './tmConfig';
+import { SighashWithAction, TypedMessage } from './tmMolecule';
+const { Uint64, Uint32 } = number;
 
 const { CKBHasher, ckbHash } = utils;
 
@@ -187,6 +189,32 @@ export function prepareSigningEntries(
   return txSkeleton;
 }
 
+export function generateSkeletonHash(txSkeleton: TransactionSkeletonType): HexString {
+  let data = ''
+
+  const tx = createTransactionFromSkeleton(txSkeleton);
+  const txHash = ckbHash(blockchain.RawTransaction.pack(tx));
+  console.log('txHash', txHash)
+  data += txHash
+
+  for (let i = txSkeleton.inputs.size; i < txSkeleton.witnesses.size; i++) {
+    const witness = txSkeleton.witnesses.get(i)
+    console.log('hashWitness', witness)
+    data += bytes.hexify(Uint32.pack(witness.length / 2 - 1)).slice(2)
+    data += witness.slice(2)
+  }
+  return ckbHash(data)
+}
+
+export function generateFinalHash(skeletonHash: HexString, typedMessage: HexString): HexString {
+  let data = ''
+  data += skeletonHash
+  data += bytes.hexify(Uint64.pack(typedMessage.length / 2 - 1)).slice(2)
+  data += typedMessage.slice(2)
+  return ckbHash(data)
+}
+
+
 /**
  * Create a CKB Default Lock (Secp256k1Blake160 Sign-all) Wallet by a private-key and a SporeConfig,
  * providing lock/address, and functions to sign message/transaction and send the transaction on-chain.
@@ -245,11 +273,50 @@ export function createTmLockWallet(privateKey: HexString): Wallet {
   // Sign the transaction and send it via RPC
   async function signAndSendTransaction(txSkeleton: helpers.TransactionSkeletonType): Promise<Hash> {
     // 1. Sign transaction
-    txSkeleton = prepareSigningEntries(txSkeleton, config.lumos, 'SECP256K1_BLAKE160');
-    txSkeleton = signTransaction(txSkeleton);
+    // txSkeleton = prepareSigningEntries(txSkeleton, config.lumos, 'SECP256K1_BLAKE160');
+    // txSkeleton = signTransaction(txSkeleton);
+
+    let sighashWithActionLock = '0x39e370ad1e0ddf2717c78e8e4999f01d064936017ae83e26f6737702d29f468f75fec0aa2aa6fe78c27abc6db013acb3d0e5d1fbf911169faa3a4ac98f39e74800'
+    let sighashWithActionMessage: UnpackResult<typeof TypedMessage> = {
+      type: "TypedMessageV1",
+      value: [{
+        scriptHash: '0x0000000000000000000000000000000000000000000000000000000000000000',
+        action: {
+          infoHash: '0x0000000000000000000000000000000000000000000000000000000000000000',
+          data: '0x1234567890'
+        }
+      }],
+    };
+    let sighashWithAction = SighashWithAction.pack({
+      lock: sighashWithActionLock,
+      message: sighashWithActionMessage,
+    })
+    let witnessIndex0 = '0x010000ff' + bytes.hexify(sighashWithAction).slice(2);
+    let extraFee = (witnessIndex0.length - 2) / 2 - 85
+    txSkeleton.outputs.get(0).cellOutput.capacity = '0x' + (parseInt(txSkeleton.outputs.get(0).cellOutput.capacity, 16) - extraFee).toString(16)
+
+    let skeletonHash = generateSkeletonHash(txSkeleton)
+    console.log('skeletonHash', skeletonHash)
+    let typedMessage = bytes.hexify(TypedMessage.pack(sighashWithActionMessage))
+    console.log('typedMessage', typedMessage)
+    let digestMessage = generateFinalHash(skeletonHash, typedMessage)
+    console.log('digestMessage', digestMessage)
+    sighashWithActionLock = signMessage(digestMessage)
+    console.log('signature', sighashWithActionLock)
+
+    sighashWithAction = SighashWithAction.pack({
+      lock: sighashWithActionLock,
+      message: sighashWithActionMessage,
+    })
+    witnessIndex0 = '0x010000ff' + bytes.hexify(sighashWithAction).slice(2);
+
+    let witnesses = List<string>()
+    witnesses = witnesses.set(0, witnessIndex0)
+    txSkeleton = txSkeleton.set('witnesses', witnesses)
 
     // 2. Convert TransactionSkeleton to Transaction
     const tx = helpers.createTransactionFromSkeleton(txSkeleton);
+    console.log(JSON.stringify(tx, null, 4))
 
     // 3. Send transaction
     const rpc = new RPC(config.ckbNodeUrl);
