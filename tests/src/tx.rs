@@ -19,13 +19,25 @@ use rand::{thread_rng, RngCore};
 
 pub struct TypedMsgData {
     pub privkey: Privkey,
+    pub pubkey_hash: [u8; 20],
+    pub group_size: usize,
     pub action: Option<TypedMessage>,
     pub sign: Option<Vec<u8>>,
 }
 impl TypedMsgData {
-    pub fn new() -> Self {
+    pub fn new(group_size: usize) -> Self {
+        let privkey = Generator::random_privkey();
+        let pubkey_hash = {
+            let pub_hash = ckb_testtool::ckb_hash::blake2b_256(
+                privkey.pubkey().expect("pubkey").serialize().as_slice(),
+            );
+            pub_hash[..20].try_into().unwrap()
+        };
+
         Self {
-            privkey: Generator::random_privkey(),
+            privkey,
+            pubkey_hash,
+            group_size,
             action: None,
             sign: None,
         }
@@ -65,12 +77,6 @@ impl TypedMsgData {
                 .build(),
         }
     }
-
-    pub fn get_pubkey_hash(&self) -> [u8; 20] {
-        let pub_key = self.privkey.pubkey().expect("pubkey").serialize();
-        let pub_hash = ckb_testtool::ckb_hash::blake2b_256(pub_key.as_slice());
-        pub_hash[0..20].try_into().unwrap()
-    }
 }
 
 pub struct TypedMsgWitnesses {
@@ -78,10 +84,10 @@ pub struct TypedMsgWitnesses {
     pub others: Vec<ExtendedWitness>,
 }
 impl TypedMsgWitnesses {
-    pub fn new(num: usize, others: Vec<ExtendedWitness>) -> Self {
+    pub fn new(groups_size: Vec<usize>, others: Vec<ExtendedWitness>) -> Self {
         let mut typed_msg_datas = Vec::new();
-        for _i in 0..num {
-            typed_msg_datas.push(TypedMsgData::new());
+        for group_size in groups_size {
+            typed_msg_datas.push(TypedMsgData::new(group_size));
         }
 
         Self {
@@ -120,6 +126,10 @@ impl TypedMsgWitnesses {
         for data in &self.typed_msg_datas {
             let d = data.new_extended_witness();
             witnesses.push(d.as_bytes());
+
+            for _ in 1..data.group_size {
+                witnesses.push(Bytes::new());
+            }
         }
 
         for w in &self.others {
@@ -136,6 +146,18 @@ impl TypedMsgWitnesses {
             }
         }
         panic!("none")
+    }
+
+    pub fn get_types_data_by_args(&self, args: &[u8]) -> &TypedMsgData {
+        assert_eq!(args.len(), 20);
+
+        for d in &self.typed_msg_datas {
+            if d.pubkey_hash == args {
+                return d;
+            }
+        }
+
+        panic!("args cannot be found {:02x?}", args);
     }
 
     pub fn rng_byte32() -> blockchain::Byte32 {
@@ -189,21 +211,23 @@ pub fn gen_tx(witnesses: &TypedMsgWitnesses) -> (TransactionView, Context) {
     let (out_point, mut tx) = append_cells(&mut context);
 
     for data in &witnesses.typed_msg_datas {
-        let lock_script = context
-            .build_script(&out_point, Bytes::from(data.get_pubkey_hash().to_vec()))
-            .expect("script");
-        let input_out_point = context.create_cell(
-            CellOutput::new_builder()
-                .capacity(1000u64.pack())
-                .lock(lock_script.clone())
-                .build(),
-            Bytes::new(),
-        );
-        let input = CellInput::new_builder()
-            .previous_output(input_out_point)
-            .build();
+        for _ in 0..data.group_size {
+            let lock_script = context
+                .build_script(&out_point, Bytes::from(data.pubkey_hash.to_vec()))
+                .expect("script");
+            let input_out_point = context.create_cell(
+                CellOutput::new_builder()
+                    .capacity(1000u64.pack())
+                    .lock(lock_script.clone())
+                    .build(),
+                Bytes::new(),
+            );
+            let input = CellInput::new_builder()
+                .previous_output(input_out_point)
+                .build();
 
-        tx = tx.input(input)
+            tx = tx.input(input)
+        }
     }
 
     let output_lock_script = context
@@ -253,12 +277,30 @@ fn generate_skeleton_hash(tx: &TransactionView) -> [u8; 32] {
     ret_hash
 }
 
+fn witness_is_empty(tx: &TransactionView, index: usize) -> bool {
+    let w = tx.witnesses().get(index);
+    if w.is_none() {
+        return true;
+    }
+
+    let w = w.unwrap();
+    if w.is_empty() || w.len() == 4 {
+        return true;
+    }
+
+    false
+}
+
 pub fn sign_tx(witnesses: &mut TypedMsgWitnesses, tx: TransactionView) -> TransactionView {
     // get sign message
     let skeleton_hash = generate_skeleton_hash(&tx);
 
+    let typed_msg = witnesses.get_action().as_slice().to_vec();
+    let mut typed_data_count = 0usize;
     for i in 0..tx.inputs().len() {
-        let typed_msg = witnesses.get_action().as_slice().to_vec();
+        if witness_is_empty(&tx, i) {
+            continue;
+        }
 
         let mut hasher = new_blake2b();
         hasher.update(&skeleton_hash);
@@ -270,14 +312,19 @@ pub fn sign_tx(witnesses: &mut TypedMsgWitnesses, tx: TransactionView) -> Transa
 
         let sign = witnesses
             .typed_msg_datas
-            .get(i)
+            .get(typed_data_count)
             .unwrap()
             .privkey
             .sign_recoverable(&Message::from_slice(&digest_message).unwrap())
             .expect("sign")
             .serialize();
 
-        witnesses.typed_msg_datas.get_mut(i).unwrap().sign = Some(sign);
+        witnesses
+            .typed_msg_datas
+            .get_mut(typed_data_count)
+            .unwrap()
+            .sign = Some(sign);
+        typed_data_count += 1;
     }
 
     let witnesses = witnesses.get_witnesses();

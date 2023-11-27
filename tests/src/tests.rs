@@ -32,7 +32,7 @@ fn test_success() {
             .build(),
     ];
 
-    let mut witnesses = TypedMsgWitnesses::new(2, others_witnesses);
+    let mut witnesses = TypedMsgWitnesses::new(vec![3, 1, 2], others_witnesses);
     witnesses.set_with_action(1);
 
     // deploy contract
