@@ -8,7 +8,7 @@ import { RPC, hd, helpers } from '@ckb-lumos/lumos';
 import { defaultEmptyWitnessArgs, isScriptValueEquals, updateWitnessArgs } from '@spore-sdk/core';
 import { List, Set } from "immutable";
 import { config, configTypedMessageLockDemo } from './tmConfig';
-import { SighashWithAction, TypedMessage } from './tmMolecule';
+import { SighashWithAction, TypedMessage, SporeAction, Transfer, AddressOpt } from './tmMolecule';
 const { Uint64, Uint32 } = number;
 
 const { CKBHasher, ckbHash } = utils;
@@ -272,9 +272,21 @@ export function createTmLockWallet(privateKey: HexString): Wallet {
 
   // Sign the transaction and send it via RPC
   async function signAndSendTransaction(txSkeleton: helpers.TransactionSkeletonType): Promise<Hash> {
-    // 1. Sign transaction
-    // txSkeleton = prepareSigningEntries(txSkeleton, config.lumos, 'SECP256K1_BLAKE160');
-    // txSkeleton = signTransaction(txSkeleton);
+
+    const sporeMessageNftID = txSkeleton.outputs.get(0).cellOutput.type!.args
+    const sporeMessageTo = txSkeleton.outputs.get(0).cellOutput.lock
+    let sporeAction = bytes.hexify(SporeAction.pack({
+      type: 'Transfer',
+      value: {
+        nftID: sporeMessageNftID,
+        to: {
+          type: 'Script',
+          value: sporeMessageTo
+        },
+      },
+    }))
+
+    console.log('spore action:', JSON.stringify(SporeAction.unpack(sporeAction), null, 4))
 
     let sighashWithActionLock = '0x39e370ad1e0ddf2717c78e8e4999f01d064936017ae83e26f6737702d29f468f75fec0aa2aa6fe78c27abc6db013acb3d0e5d1fbf911169faa3a4ac98f39e74800'
     let sighashWithActionMessage: UnpackResult<typeof TypedMessage> = {
@@ -283,7 +295,7 @@ export function createTmLockWallet(privateKey: HexString): Wallet {
         scriptHash: '0x0000000000000000000000000000000000000000000000000000000000000000',
         action: {
           infoHash: '0x0000000000000000000000000000000000000000000000000000000000000000',
-          data: '0x1234567890'
+          data: sporeAction
         }
       }],
     };
