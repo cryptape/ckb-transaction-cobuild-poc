@@ -1,14 +1,15 @@
-use super::*;
+use super::tx::*;
 use ckb_testtool::ckb_error::Error;
-use ckb_testtool::ckb_types::{bytes::Bytes, core::TransactionBuilder, packed::*, prelude::*};
-use ckb_testtool::context::Context;
+use ckb_testtool::ckb_types::prelude::*;
+use ckb_typed_message::schemas::{
+    basic::{Otx, OtxStart},
+    top_level::{ExtendedWitness, ExtendedWitnessUnion},
+};
 
 const MAX_CYCLES: u64 = 10_000_000;
 
 // error numbers
-const ERROR_EMPTY_ARGS: i8 = 5;
-
-fn assert_script_error(err: Error, err_code: i8) {
+fn _assert_script_error(err: Error, err_code: i8) {
     let error_string = err.to_string();
     assert!(
         error_string.contains(format!("error code {} ", err_code).as_str()),
@@ -20,100 +21,26 @@ fn assert_script_error(err: Error, err_code: i8) {
 
 #[test]
 fn test_success() {
-    // deploy contract
-    let mut context = Context::default();
-    let contract_bin: Bytes = Loader::default().load_binary("typed-message-lock-demo");
-    let out_point = context.deploy_cell(contract_bin);
-
-    // prepare scripts
-    let lock_script = context
-        .build_script(&out_point, Bytes::from(vec![42]))
-        .expect("script");
-
-    // prepare cells
-    let input_out_point = context.create_cell(
-        CellOutput::new_builder()
-            .capacity(1000u64.pack())
-            .lock(lock_script.clone())
+    let others_witnesses = vec![
+        ExtendedWitness::new_builder()
+            .set(ExtendedWitnessUnion::OtxStart(
+                OtxStart::new_builder().build().into(),
+            ))
             .build(),
-        Bytes::new(),
-    );
-    let input = CellInput::new_builder()
-        .previous_output(input_out_point)
-        .build();
-    let outputs = vec![
-        CellOutput::new_builder()
-            .capacity(500u64.pack())
-            .lock(lock_script.clone())
-            .build(),
-        CellOutput::new_builder()
-            .capacity(500u64.pack())
-            .lock(lock_script)
+        ExtendedWitness::new_builder()
+            .set(ExtendedWitnessUnion::Otx(Otx::new_builder().build().into()))
             .build(),
     ];
 
-    let outputs_data = vec![Bytes::new(); 2];
+    let mut witnesses = TypedMsgWitnesses::new(2, others_witnesses);
+    witnesses.set_with_action(1);
 
-    // build transaction
-    let tx = TransactionBuilder::default()
-        .input(input)
-        .outputs(outputs)
-        .outputs_data(outputs_data.pack())
-        .build();
-    let tx = context.complete_tx(tx);
-
-    // run
-    // let cycles = context
-    //     .verify_tx(&tx, MAX_CYCLES)
-    //     .expect("pass verification");
-    // println!("consume cycles: {}", cycles);
-}
-
-#[test]
-fn test_empty_args() {
     // deploy contract
-    let mut context = Context::default();
-    let contract_bin: Bytes = Loader::default().load_binary("typed-message-lock-demo");
-    let out_point = context.deploy_cell(contract_bin);
-
-    // prepare scripts
-    let lock_script = context
-        .build_script(&out_point, Default::default())
-        .expect("script");
-
-    // prepare cells
-    let input_out_point = context.create_cell(
-        CellOutput::new_builder()
-            .capacity(1000u64.pack())
-            .lock(lock_script.clone())
-            .build(),
-        Bytes::new(),
-    );
-    let input = CellInput::new_builder()
-        .previous_output(input_out_point)
-        .build();
-    let outputs = vec![
-        CellOutput::new_builder()
-            .capacity(500u64.pack())
-            .lock(lock_script.clone())
-            .build(),
-        CellOutput::new_builder()
-            .capacity(500u64.pack())
-            .lock(lock_script)
-            .build(),
-    ];
-
-    let outputs_data = vec![Bytes::new(); 2];
-
-    // build transaction
-    let tx = TransactionBuilder::default()
-        .input(input)
-        .outputs(outputs)
-        .outputs_data(outputs_data.pack())
-        .build();
-    let tx = context.complete_tx(tx);
-
+    let (tx, context) = gen_tx(&witnesses);
+    let tx = sign_tx(&mut witnesses, tx);
     // run
-    // let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
-    // assert_script_error(err, ERROR_EMPTY_ARGS);
+    let cycles = context
+        .verify_tx(&tx, MAX_CYCLES)
+        .expect("pass verification");
+    println!("consume cycles: {}", cycles);
 }
