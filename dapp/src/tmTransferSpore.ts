@@ -33,14 +33,14 @@ async function main() {
 
     let { txSkeleton } = await transferSpore({
         outPoint: {
-            txHash: '0xa0ada5198018cc40aecc3abc1d56471b72de7e8045f72e1e1e87d3ff1902a076',
+            txHash: '0xe38c20d8f3615969f24eaa6b8383d43ed471350762e19b3ae981c688e9effe0e',
             index: '0x0',
         },
         toLock: tmAccounts.bob.lock,
         config: config,
     });
 
-    let signingActionMessageScriptActionActionInfoHashDappInfo: UnpackResult<typeof DappInfo> = {
+    let dappInfo: UnpackResult<typeof DappInfo> = {
         type: 'DappInfoV1',
         value: {
             name: bytes.hexify(bytes.bytifyRawString('spore')),
@@ -54,28 +54,28 @@ async function main() {
             messageType: bytes.hexify(bytes.bytifyRawString('SporeAction')),
         }
     };
-    let signingActionMessageScriptActionActionInfoHash = ckbHash(DappInfo.pack(signingActionMessageScriptActionActionInfoHashDappInfo));
-    let signingActionMessageScriptActionActionDataSporeActionTransferNftId = txSkeleton.outputs.get(0).cellOutput.type!.args;
-    let signingActionMessageScriptActionActionDataSporeActionTransferTo = txSkeleton.outputs.get(0).cellOutput.lock;
-    let signingActionMessageScriptActionActionData = bytes.hexify(SporeAction.pack({
+    let dappInfoHash = ckbHash(DappInfo.pack(dappInfo));
+    let sporeID = txSkeleton.outputs.get(0).cellOutput.type!.args;
+    let sporeTransferTo = txSkeleton.outputs.get(0).cellOutput.lock;
+    let actionData = bytes.hexify(SporeAction.pack({
         type: 'Transfer',
         value: {
-            nftID: signingActionMessageScriptActionActionDataSporeActionTransferNftId,
+            nftID: sporeID,
             to: {
                 type: 'Script',
-                value: signingActionMessageScriptActionActionDataSporeActionTransferTo
+                value: sporeTransferTo
             },
         },
     }))
-    let signingActionMessageScriptActionAction: UnpackResult<typeof Action> = {
-        infoHash: signingActionMessageScriptActionActionInfoHash,
-        data: signingActionMessageScriptActionActionData,
+    let action: UnpackResult<typeof Action> = {
+        infoHash: dappInfoHash,
+        data: actionData,
     };
-    let signingActionMessageScriptAction: UnpackResult<typeof ScriptAction> = {
-        scriptHash: signingActionMessageScriptActionActionInfoHashDappInfo.value.scriptHash,
-        action: signingActionMessageScriptActionAction,
+    let scriptAction: UnpackResult<typeof ScriptAction> = {
+        scriptHash: dappInfo.value.scriptHash,
+        action: action,
     };
-    let signingActionMessage = [signingActionMessageScriptAction];
+    let signingActionMessage = [scriptAction];
     let signingActionSignature = '0x' + '0'.repeat(130);
     let sighashWithAction = SighashWithAction.pack({
         lock: signingActionSignature,
@@ -98,7 +98,7 @@ async function main() {
             value: signingActionMessage,
         },
         skeletonHash: generateSkeletonHash(txSkeleton),
-        infos: [signingActionMessageScriptActionActionInfoHashDappInfo],
+        infos: [dappInfo],
         scratch: null,
     }
 
