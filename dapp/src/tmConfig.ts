@@ -101,6 +101,34 @@ import { SporeConfig, PredefinedSporeConfigScriptName } from '@spore-sdk/core';
 //     extensions: [],
 // };
 
+// export const configAuth = {
+//     script: {
+//         codeHash: '0x9017dadb5493e6317da3bab8a1456851d45043ff701d6455a03abdabcad99e3e',
+//         hashType: 'data1' as HashType,
+//     },
+//     cellDep: {
+//         outPoint: {
+//             txHash: '0x66e844b7a3002d5a389e41aa7adcbab0dbb412fa145449b3ab39ea6f2b39dbaa',
+//             index: '0x0',
+//         },
+//         depType: 'code' as DepType,
+//     }
+// }
+
+// export const configTypedMessageLockDemo = {
+//     script: {
+//         codeHash: '0x81046990df3542a0563555af6b863fa4ec8d1d60d77ed8d654d981c7c015f6b2',
+//         hashType: 'data1' as HashType,
+//     },
+//     cellDep: {
+//         outPoint: {
+//             txHash: '0x66e844b7a3002d5a389e41aa7adcbab0dbb412fa145449b3ab39ea6f2b39dbaa',
+//             index: '0x1',
+//         },
+//         depType: 'code' as DepType,
+//     }
+// }
+
 
 export const config: SporeConfig<PredefinedSporeConfigScriptName> = {
     lumos: createConfig(createConfig({
