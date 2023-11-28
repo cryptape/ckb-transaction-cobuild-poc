@@ -5,16 +5,19 @@ import {
     PackedSince,
     WitnessArgs,
     blockchain,
-    values,
+    utils,
+    values
 } from "@ckb-lumos/base";
-import { bytes } from "@ckb-lumos/codec";
+import { bytes, number } from "@ckb-lumos/codec";
 import { FromInfo } from "@ckb-lumos/common-scripts";
 import {
     Options,
-    TransactionSkeletonType,
+    TransactionSkeletonType, createTransactionFromSkeleton
 } from "@ckb-lumos/helpers";
 import { configAuth, config as configLumos, configTypedMessageLockDemo } from './tmConfig';
 const { ScriptValue } = values;
+const { ckbHash } = utils;
+const { Uint32, Uint64 } = number;
 
 export const SECP_SIGNATURE_PLACEHOLDER = "0x0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
 
@@ -169,4 +172,30 @@ export async function setupInputCell(
     }
 
     return txSkeleton;
+}
+
+export function generateSkeletonHash(txSkeleton: TransactionSkeletonType): HexString {
+    let data = ''
+
+    const tx = createTransactionFromSkeleton(txSkeleton);
+    const txHash = ckbHash(blockchain.RawTransaction.pack(tx));
+    console.log('generateSkeletonHash: txHash =', txHash)
+    data += txHash
+
+    for (let i = txSkeleton.inputs.size; i < txSkeleton.witnesses.size; i++) {
+        const witness = txSkeleton.witnesses.get(i)
+        console.log('generateSkeletonHash: hashWitness =', witness)
+        data += bytes.hexify(Uint32.pack(witness.length / 2 - 1)).slice(2)
+        data += witness.slice(2)
+    }
+    return ckbHash(data)
+}
+
+
+export function generateFinalHash(skeletonHash: HexString, typedMessage: HexString): HexString {
+    let data = ''
+    data += skeletonHash
+    data += bytes.hexify(Uint64.pack(typedMessage.length / 2 - 1)).slice(2)
+    data += typedMessage.slice(2)
+    return ckbHash(data)
 }
