@@ -8,7 +8,7 @@ import { List } from "immutable";
 import { resolve } from 'path';
 import { generateFinalHash, generateSkeletonHash } from './tmBuild';
 import { config, configTypedMessageLockDemo } from './tmConfig';
-import { DappInfo, SighashWithAction, SigningAction, TypedMessage } from './tmMolecule';
+import { DappInfo, SighashWithAction, SigningAction, SporeAction, TypedMessage } from './tmMolecule';
 const { computeScriptHash, ckbHash } = utils;
 
 export async function fetchLocalFile(src: string) {
@@ -169,6 +169,9 @@ export function createTmLockWallet(privateKey: HexString): Wallet {
 
     let signingAction = SigningAction.unpack(bytes.bytify(txSkeleton.signingEntries.get(0).message));
     console.log('signingAction', JSON.stringify(signingAction, null, 4))
+
+    let action = SporeAction.unpack(signingAction.message.value[0].action.data);
+    console.log('action', JSON.stringify(action, null, 4))
 
     let dappInfo: UnpackResult<typeof DappInfo> = {
       type: 'DappInfoV1',
