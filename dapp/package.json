@@ -9,6 +9,7 @@
     "skCreateSporeWithCluster": "ts-node src/skCreateSporeWithCluster.ts",
     "skTransferSpore": "ts-node src/skTransferSpore.ts",
     "tmCreateSpore": "ts-node src/tmCreateSpore.ts",
+    "tmDebug": "ckb-debugger --tx-file src/tmTxDump.json -s lock",
     "tmTransferSpore": "ts-node src/tmTransferSpore.ts"
   },
   "dependencies": {
