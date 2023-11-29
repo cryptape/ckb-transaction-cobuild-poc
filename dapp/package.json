@@ -1,5 +1,5 @@
 {
-  "name": "dapp",
+  "name": "ckb-typed-message-demo-dapp",
   "version": "0.1.0",
   "license": "MIT",
   "scripts": {
