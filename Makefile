@@ -6,7 +6,6 @@ all:
 mol:
 	moleculec --language rust --schema-file schemas/basic.mol > ckb-typed-message/src/schemas/basic.rs
 	moleculec --language rust --schema-file schemas/top_level.mol > ckb-typed-message/src/schemas/top_level.rs
-	moleculec --language rust --schema-file schemas/spore.mol > ckb-typed-message/src/schemas/spore.rs
 	cargo fmt
 
 install:
