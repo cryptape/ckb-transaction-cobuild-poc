@@ -69,23 +69,18 @@ pub fn fetch_witness_layout() -> Result<WitnessLayout, Error> {
 /// This function can also check the count of SighashAll is one.
 ///
 pub fn fetch_sighash_all() -> Result<SighashAll, Error> {
-    let mut result = None;
+    let mut iter = QueryIter::new(load_witness, Source::Input).filter_map(|witness| {
+        WitnessLayoutReader::from_slice(&witness)
+            .ok()
+            .and_then(|r| match r.to_enum() {
+                WitnessLayoutUnionReader::SighashAll(s) => Some(s.to_entity()),
+                _ => None,
+            })
+    });
 
-    for witness in QueryIter::new(load_witness, Source::Input) {
-        if let Ok(r) = WitnessLayoutReader::from_slice(&witness) {
-            if let WitnessLayoutUnionReader::SighashAll(s) = r.to_enum() {
-                if result.is_some() {
-                    return Err(Error::WrongSighashAll);
-                } else {
-                    result = Some(s.to_entity());
-                }
-            }
-        }
-    }
-    if result.is_some() {
-        return Ok(result.unwrap());
-    } else {
-        return Err(Error::WrongSighashAll);
+    match (iter.next(), iter.next()) {
+        (Some(sighash_with_action), None) => Ok(sighash_with_action),
+        _ => Err(Error::WrongSighashAll),
     }
 }
 
@@ -94,12 +89,14 @@ pub fn fetch_sighash_all() -> Result<SighashAll, Error> {
 /// first one should be empty
 ///
 pub fn check_others_in_group() -> Result<(), Error> {
-    for witness in QueryIter::new(load_witness, Source::GroupInput).skip(1) {
-        if witness.as_slice().len() != 0 {
-            return Err(Error::WrongWitnessLayout);
-        }
+    if QueryIter::new(load_witness, Source::GroupInput)
+        .skip(1)
+        .all(|witness| witness.is_empty())
+    {
+        Ok(())
+    } else {
+        Err(Error::WrongWitnessLayout)
     }
-    Ok(())
 }
 
 //
@@ -111,19 +108,10 @@ pub fn generate_skeleton_hash() -> Result<[u8; 32], Error> {
     let mut hasher = new_blake2b();
     hasher.update(&load_tx_hash()?);
 
-    let mut i = calculate_inputs_len()?;
-    loop {
-        match load_witness(i, Source::Input) {
-            Ok(w) => {
-                hasher.update(&(w.len() as u64).to_le_bytes());
-                hasher.update(&w);
-            }
-            Err(SysError::IndexOutOfBound) => {
-                break;
-            }
-            Err(e) => return Err(e.into()),
-        }
-        i += 1;
+    let i = calculate_inputs_len()?;
+    for witness in QueryIter::new(load_witness, Source::Input).skip(i) {
+        hasher.update(&(witness.len() as u64).to_le_bytes());
+        hasher.update(&witness);
     }
 
     let mut output = [0u8; 32];
