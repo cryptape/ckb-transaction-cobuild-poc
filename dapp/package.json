@@ -10,7 +10,8 @@
     "skTransferSpore": "ts-node src/skTransferSpore.ts",
     "tmCreateSpore": "ts-node src/tmCreateSpore.ts",
     "tmDebug": "ckb-debugger --tx-file src/tmTxDump.json -s lock",
-    "tmTransferSpore": "ts-node src/tmTransferSpore.ts"
+    "tmTransferSpore": "ts-node src/tmTransferSpore.ts",
+    "tmQuery": "ts-node src/tmQuery.ts"
   },
   "dependencies": {
     "@ckb-lumos/lumos": "^0.21.0-next.0",
