@@ -38,7 +38,7 @@ fn test_failed_pubkey() {
     let mut witnesses = TypedMsgWitnesses::new(vec![3, 1, 2], others_witnesses);
     witnesses.set_with_action(1);
     witnesses.typed_msg_datas[2].config_failed_pubkey_hash = true;
-    
+
     witnesses.update();
 
     // deploy contract

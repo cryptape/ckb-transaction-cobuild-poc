@@ -7,13 +7,16 @@ use alloc::vec::Vec;
 use blake2b::new_blake2b;
 use ckb_std::{
     ckb_constants::Source,
+    ckb_types::packed::CellInput,
     error::SysError,
-    high_level::{load_input_since, load_tx_hash, load_witness, QueryIter},
+    high_level::{load_tx_hash, load_witness, QueryIter},
+    syscalls::load_transaction,
 };
 use core::convert::Into;
 use molecule::{
     error::VerificationError,
     prelude::{Entity, Reader},
+    NUMBER_SIZE,
 };
 use schemas::{
     basic::SighashWithAction,
@@ -141,44 +144,23 @@ pub fn generate_final_hash(skeleton_hash: &[u8; 32], typed_message: &[u8]) -> [u
     return output;
 }
 
-// Translated from https://github.com/nervosnetwork/ckb-system-scripts/blob/a7b7c75662ed950c9bd024e15f83ce702a54996e/c/common.h#L32-L66
+///
+/// the molecule data structure of transaction is:
+/// full-size|raw-offset|witnesses-offset|raw-full-size|version-offset|cell_deps-offset|header_deps-offset|inputs-offset|outputs-offset|...
+/// full-size and offset are 4 bytes, so we can read the inputs-offset and outputs-offset at [28, 36),
+/// then we can get the length of inputs by calculating the difference between inputs-offset and outputs-offset
+///
 fn calculate_inputs_len() -> Result<usize, SysError> {
-    let mut lo = 0;
-    let mut hi = 4;
-
-    // The code below can't handle the scenario when input length is zero.
-    let first_available = load_input_since(0, Source::Input);
-    if first_available.is_err() {
-        return Ok(0);
+    let mut offsets = [0u8; 8];
+    match load_transaction(&mut offsets, 28) {
+        // this syscall will always return SysError::LengthNotEnough since we only load 8 bytes, let's ignore it
+        Err(SysError::LengthNotEnough(_)) => {}
+        Err(SysError::Unknown(e)) => return Err(SysError::Unknown(e)),
+        _ => unreachable!(),
     }
-
-    loop {
-        match load_input_since(hi, Source::Input) {
-            Ok(_) => {
-                lo = hi;
-                hi *= 2;
-            }
-            Err(SysError::IndexOutOfBound) => {
-                break;
-            }
-            Err(e) => return Err(e),
-        }
-    }
-
-    while (lo + 1) != hi {
-        let i = (lo + hi) / 2;
-        match load_input_since(i, Source::Input) {
-            Ok(_) => {
-                lo = i;
-            }
-            Err(SysError::IndexOutOfBound) => {
-                hi = i;
-            }
-            Err(e) => return Err(e),
-        }
-    }
-
-    Ok(hi)
+    let inputs_offset = u32::from_le_bytes(offsets[0..4].try_into().unwrap());
+    let outputs_offset = u32::from_le_bytes(offsets[4..8].try_into().unwrap());
+    Ok((outputs_offset as usize - inputs_offset as usize - NUMBER_SIZE) / CellInput::TOTAL_SIZE)
 }
 
 ///
