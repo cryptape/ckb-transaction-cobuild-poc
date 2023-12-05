@@ -41,9 +41,45 @@ As designed, the `Sighash` variant doesn't include typed message part.
 
 ## Dapp Changes
 
+Firstly, we need to define some actions for the Dapp. For example, if the Dapp is an NFT application, it should include several action types: Mint, Transfer, or Melt. We can pass some parameters in these actions to indicate "who created this NFT," "to whom this NFT should be transferred," etc. The relevant definition file can be found [here](https://github.com/cryptape/ckb-typed-message-poc/blob/main/schemas/spore.mol). The definition file should be public, accessible to anyone.
+
+When a user attempts a certain action, such as transferring an NFT to another person, the Dapp should send the constructed `Transaction` and `SigningAction` together to the wallet. The construction of the SigningAction is relatively complex and can be referenced in the diagram below.
+
+The detailed steps can be found by reading our POC code.
+
+```
+                                                                             ┌────────────────────┐
+                                                                             │                    │
+                                                                             │    SigningAction   │
+              ┌───────────────┐                                              ├────────────────────┤
+              │    DappInfo   │                                              │                    │
+              ├───────────────┤                                              │  Flags             │
+              │ Name          │                                              │  (Always 0)        │
+┌───────────┐ │               │                                              │                    │
+│  schema   │ │ Url           │   ┌───────────────┐     ┌────────────────┐   │  Address           │
+├───────────┤ │               │   │    Action     │     │  ScriptAction  │   │  (Lock script)     │
+│  Mint     │ │ ScriptHash    │   ├───────────────┤     ├────────────────┤   │                    │
+│           │ │               │   │               │     │                ├───┼─> Message          │
+│  Transfer ├─┼─>Schema       ├───┼─>DappInfoHash ├─────┼─>Action        │   │                    │
+│           │ │               │   │               │     │                │   │  SkeletonHash      │
+│  Melt     │ │ MessageType   │   │               │     │                │   │                    │
+└───────────┘ └───────────────┘   │               │     │                │   │  Infos             │
+                                  │               │     │ ScriptHash     │   │  (Raw data of      │
+┌────────────────────────────┐    │               │     │ (Dapp's type   │   │   DappInfo)        │
+│ Transfer my NFT to jack!   ├────┼─>Data         │     │  script hash)  │   │                    │
+│                            │    │               │     │                │   │  Scratch           │
+└────────────────────────────┘    └───────────────┘     └────────────────┘   └────────────────────┘
+```
 
 ## Wallet Changes
 
+When the wallet receives the Transaction and SigningAction, it should verify the following information:
+
+1. Check if the DappInfoHash in each Action corresponds to the DappInfo.
+2. Verify the SkeletonHash.
+3. Display the Message on the screen and wait for the user to click the confirm button.
+4. Calculate digest_message: digest_message = hash(skeleton_hash + message_len + message), where message_len is represented in 64-bit little-endian format.
+5. Combine digest_message and lock into SighashWithAction, serialize it, and write it into the corresponding witness.
 
 ## Others
 The type script changes are not covered in this document.
