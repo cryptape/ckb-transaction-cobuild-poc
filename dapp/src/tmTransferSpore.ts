@@ -6,7 +6,7 @@ import { transferSpore } from '@spore-sdk/core';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import { generateSkeletonHash, setupInputCell } from './tmBuild';
-import { config, configTypedMessageLockDemo } from './tmConfig';
+import { config, configTransactionCobuildLockDemo } from './tmConfig';
 import { Action, DappInfo, ScriptAction, SighashWithAction, SigningAction, SporeAction } from './tmMolecule';
 import { tmAccounts } from './tmWallet';
 const { ckbHash, computeScriptHash } = utils;
@@ -20,8 +20,8 @@ export async function fetchLocalFile(src: string) {
 async function main() {
     registerCustomLockScriptInfos([
         {
-            codeHash: configTypedMessageLockDemo.script.codeHash,
-            hashType: configTypedMessageLockDemo.script.hashType,
+            codeHash: configTransactionCobuildLockDemo.script.codeHash,
+            hashType: configTransactionCobuildLockDemo.script.hashType,
             lockScriptInfo: {
                 CellCollector: null,
                 setupInputCell: setupInputCell,
@@ -33,7 +33,7 @@ async function main() {
 
     let { txSkeleton } = await transferSpore({
         outPoint: {
-            txHash: '0xd8f228f2347c58f10644736cf1b961f61eca42d92eb067334c93fd43509089c4',
+            txHash: '0x4e257666e1fb5ed06badcb9322b53c20bb90956660906b0f70462cae8857978a',
             index: '0x0',
         },
         toLock: tmAccounts.bob.lock,

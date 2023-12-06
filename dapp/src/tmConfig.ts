@@ -115,7 +115,7 @@ import { SporeConfig, PredefinedSporeConfigScriptName } from '@spore-sdk/core';
 //     }
 // }
 
-// export const configTypedMessageLockDemo = {
+// export const configTransactionCobuildLockDemo = {
 //     script: {
 //         codeHash: '0x81046990df3542a0563555af6b863fa4ec8d1d60d77ed8d654d981c7c015f6b2',
 //         hashType: 'data1' as HashType,
@@ -196,7 +196,7 @@ export const configAuth = {
     }
 }
 
-export const configTypedMessageLockDemo = {
+export const configTransactionCobuildLockDemo = {
     script: {
         codeHash: '0x81046990df3542a0563555af6b863fa4ec8d1d60d77ed8d654d981c7c015f6b2',
         hashType: 'data1' as HashType,

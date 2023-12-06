@@ -14,7 +14,7 @@ import {
     Options,
     TransactionSkeletonType, createTransactionFromSkeleton
 } from "@ckb-lumos/helpers";
-import { configAuth, config as configLumos, configTypedMessageLockDemo } from './tmConfig';
+import { configAuth, config as configLumos, configTransactionCobuildLockDemo } from './tmConfig';
 const { ScriptValue } = values;
 const { ckbHash } = utils;
 const { Uint32, Uint64 } = number;
@@ -116,8 +116,8 @@ export async function setupInputCell(
         depType: configAuth.cellDep.depType,
     });
     txSkeleton = addCellDep(txSkeleton, {
-        outPoint: configTypedMessageLockDemo.cellDep.outPoint,
-        depType: configTypedMessageLockDemo.cellDep.depType,
+        outPoint: configTransactionCobuildLockDemo.cellDep.outPoint,
+        depType: configTransactionCobuildLockDemo.cellDep.depType,
     });
 
     // add witness

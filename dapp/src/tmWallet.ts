@@ -7,7 +7,7 @@ import { readFileSync } from 'fs';
 import { List } from "immutable";
 import { resolve } from 'path';
 import { generateFinalHash, generateSkeletonHash } from './tmBuild';
-import { config, configTypedMessageLockDemo } from './tmConfig';
+import { config, configTransactionCobuildLockDemo } from './tmConfig';
 import { DappInfo, SighashWithAction, SigningAction, SporeAction, TypedMessage } from './tmMolecule';
 const { computeScriptHash, ckbHash } = utils;
 
@@ -116,8 +116,8 @@ export const skAccounts = {
 export function createTmLockWallet(privateKey: HexString): Wallet {
   // Generate a lock script from the private key
   const lock: Script = {
-    codeHash: configTypedMessageLockDemo.script.codeHash,
-    hashType: configTypedMessageLockDemo.script.hashType,
+    codeHash: configTransactionCobuildLockDemo.script.codeHash,
+    hashType: configTransactionCobuildLockDemo.script.hashType,
     args: hd.key.privateKeyToBlake160(privateKey),
   };
 
