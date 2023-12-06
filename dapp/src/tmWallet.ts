@@ -194,8 +194,8 @@ export function createTmLockWallet(privateKey: HexString): Wallet {
 
     let skeletonHash = signingAction.skeletonHash
     let typedMessage = bytes.hexify(TypedMessage.pack(signingAction.message))
-    let digestMessage = generateFinalHash(skeletonHash, typedMessage)
-    let sighashWithActionLock = signMessage(digestMessage)
+    let messageDigest = generateFinalHash(skeletonHash, typedMessage)
+    let sighashWithActionLock = signMessage(messageDigest)
     let sighashWithAction = SighashWithAction.pack({
       lock: sighashWithActionLock,
       message: signingAction.message,

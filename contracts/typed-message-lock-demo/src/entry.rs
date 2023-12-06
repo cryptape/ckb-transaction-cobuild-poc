@@ -17,7 +17,7 @@ const AUTH_CODE_HASH: [u8; 32] = [
 ];
 
 pub fn main() -> Result<(), Error> {
-    let (digest_message, lock) = parse_typed_message()?;
+    let (message_digest, lock) = parse_typed_message()?;
 
     let mut pubkey_hash = [0u8; 20];
     let script = load_script()?;
@@ -35,7 +35,7 @@ pub fn main() -> Result<(), Error> {
         entry_category: EntryCategoryType::DynamicLinking,
     };
 
-    ckb_auth(&entry, &id, &lock, &digest_message).map_err(|_| Error::AuthError)?;
+    ckb_auth(&entry, &id, &lock, &message_digest).map_err(|_| Error::AuthError)?;
 
     Ok(())
 }
