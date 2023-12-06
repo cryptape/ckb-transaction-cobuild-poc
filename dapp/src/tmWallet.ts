@@ -192,10 +192,7 @@ export function createTmLockWallet(privateKey: HexString): Wallet {
       throw 'Check infoHash failed!'
     }
 
-    let skeletonHash = generateSkeletonHash(txSkeleton)
-    if (skeletonHash != signingAction.skeletonHash) {
-      throw 'Check skeletonHash failed!'
-    }
+    let skeletonHash = signingAction.skeletonHash
     let typedMessage = bytes.hexify(TypedMessage.pack(signingAction.message))
     let digestMessage = generateFinalHash(skeletonHash, typedMessage)
     let sighashWithActionLock = signMessage(digestMessage)
