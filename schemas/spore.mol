@@ -1,6 +1,12 @@
 import blockchain;
 import basic;
 
+union Address {
+    Script,
+}
+
+option AddressOpt (Address);
+
 table Mint {
     id: Byte32,
     to: Address,

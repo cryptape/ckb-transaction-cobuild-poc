@@ -19,17 +19,15 @@ use molecule::{
     NUMBER_SIZE,
 };
 use schemas::{
-    basic::SighashWithAction,
-    top_level::{
-        ExtendedWitness, ExtendedWitnessReader, ExtendedWitnessUnion, ExtendedWitnessUnionReader,
-    },
+    basic::SighashAll,
+    top_level::{WitnessLayout, WitnessLayoutReader, WitnessLayoutUnion, WitnessLayoutUnionReader},
 };
 
 #[derive(Eq, PartialEq, Debug, Clone, Copy)]
 pub enum Error {
     Sys(SysError),
     MoleculeEncoding,
-    WrongSighashWithAction,
+    WrongSighashAll,
     WrongWitnessLayout,
 }
 
@@ -46,16 +44,16 @@ impl From<VerificationError> for Error {
 }
 
 ///
-/// Fetch the corresponding ExtendedWitness( Sighash or SighashWithAction)
+/// Fetch the corresponding WitnessLayout(SighashAll or SighashAllOnly)
 /// Used by lock script
 ///
-pub fn fetch_sighash() -> Result<ExtendedWitness, Error> {
+pub fn fetch_sighash() -> Result<WitnessLayout, Error> {
     match load_witness(0, Source::GroupInput) {
         Ok(witness) => {
-            if let Ok(r) = ExtendedWitnessReader::from_slice(&witness) {
+            if let Ok(r) = WitnessLayoutReader::from_slice(&witness) {
                 match r.to_enum() {
-                    ExtendedWitnessUnionReader::SighashWithAction(_)
-                    | ExtendedWitnessUnionReader::Sighash(_) => Ok(r.to_entity()),
+                    WitnessLayoutUnionReader::SighashAll(_)
+                    | WitnessLayoutUnionReader::SighashAllOnly(_) => Ok(r.to_entity()),
                     _ => Err(Error::MoleculeEncoding),
                 }
             } else {
@@ -67,17 +65,17 @@ pub fn fetch_sighash() -> Result<ExtendedWitness, Error> {
 }
 
 ///
-/// fetch the only SighashWithAction from all witnesses.
-/// This function can also check the count of SighashWithAction is one.
+/// fetch the only SighashAll from all witnesses.
+/// This function can also check the count of SighashAll is one.
 ///
-pub fn fetch_sighash_with_action() -> Result<SighashWithAction, Error> {
+pub fn fetch_sighash_all() -> Result<SighashAll, Error> {
     let mut result = None;
 
     for witness in QueryIter::new(load_witness, Source::Input) {
-        if let Ok(r) = ExtendedWitnessReader::from_slice(&witness) {
-            if let ExtendedWitnessUnionReader::SighashWithAction(s) = r.to_enum() {
+        if let Ok(r) = WitnessLayoutReader::from_slice(&witness) {
+            if let WitnessLayoutUnionReader::SighashAll(s) = r.to_enum() {
                 if result.is_some() {
-                    return Err(Error::WrongSighashWithAction);
+                    return Err(Error::WrongSighashAll);
                 } else {
                     result = Some(s.to_entity());
                 }
@@ -87,7 +85,7 @@ pub fn fetch_sighash_with_action() -> Result<SighashWithAction, Error> {
     if result.is_some() {
         return Ok(result.unwrap());
     } else {
-        return Err(Error::WrongSighashWithAction);
+        return Err(Error::WrongSighashAll);
     }
 }
 
@@ -164,22 +162,22 @@ fn calculate_inputs_len() -> Result<usize, SysError> {
 }
 
 ///
-/// parse transaction with typed message and return 2 values:
+/// parse transaction with message and return 2 values:
 /// 1. message digest, 32 bytes message for signature verification
-/// 2. lock, lock field in SighashWithAction or Sighash. Normally as signature.
+/// 2. seal, seal field in SighashAll or SighashAllOnly. Normally as signature.
 /// This function is mainly used by lock script
 ///
-pub fn parse_typed_message() -> Result<([u8; 32], Vec<u8>), Error> {
+pub fn parse_message() -> Result<([u8; 32], Vec<u8>), Error> {
     check_others_in_group()?;
-    // Ensure that a SighashWitAction is present throughout the entire transaction
-    let sighash_with_action = fetch_sighash_with_action()?;
-    // There are 2 possible values: Sighash or SighashWithAction
+    // Ensure that a SighashWitAll is present throughout the entire transaction
+    let sighash_all = fetch_sighash_all()?;
+    // There are 2 possible values: SighashAllOnly or SighashAll
     let witness = fetch_sighash()?;
     let (lock, typed_message) = match witness.to_enum() {
-        ExtendedWitnessUnion::SighashWithAction(s) => (s.lock(), s.message()),
-        ExtendedWitnessUnion::Sighash(s) => (s.lock(), sighash_with_action.message()),
+        WitnessLayoutUnion::SighashAll(s) => (s.seal(), s.message()),
+        WitnessLayoutUnion::SighashAllOnly(s) => (s.seal(), sighash_all.message()),
         _ => {
-            return Err(Error::WrongSighashWithAction);
+            return Err(Error::WrongSighashAll);
         }
     };
     let skeleton_hash = generate_skeleton_hash()?;

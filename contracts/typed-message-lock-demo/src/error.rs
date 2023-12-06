@@ -32,7 +32,7 @@ impl From<ckb_typed_message::Error> for Error {
         match err {
             ckb_typed_message::Error::Sys(e) => e.into(),
             ckb_typed_message::Error::MoleculeEncoding => Error::Encoding,
-            ckb_typed_message::Error::WrongSighashWithAction => Error::WrongSighashWithAction,
+            ckb_typed_message::Error::WrongSighashAll => Error::WrongSighashWithAction,
             ckb_typed_message::Error::WrongWitnessLayout => Error::WrongWitnessLayout,
         }
     }
