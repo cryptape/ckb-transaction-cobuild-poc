@@ -6,7 +6,7 @@ the lock script (smart contract), DApp, and wallet.
 ## Lock Script Changes
 The changes to the lock script are relatively simple. A TL;DR version is to only add one
 line of code to existing project(See
-[example](https://github.com/XuJiandong/ckb-typed-message-poc/blob/24e764ed01c29cbf5be17225402f4847a6f50992/contracts/typed-message-lock-demo/src/entry.rs#L20)):
+[example](https://github.com/cryptape/ckb-typed-message-poc/blob/76676d0b229c914743b0204931b98f4c8e4e71e6/contracts/typed-message-lock-demo/src/entry.rs#L20)):
 ```Rust
 let (digest_message, lock) = parse_typed_message()?;
 ```
@@ -23,7 +23,7 @@ With the added support for typed messages, the digest message is calculated usin
 - skeleton hash
 - typed message
 
-The skeleton hash is calculated using the following components:
+The [skeleton hash]((https://github.com/cryptape/ckb-typed-message-poc/blob/76676d0b229c914743b0204931b98f4c8e4e71e6/ckb-typed-message/src/lib.rs#L112)) is calculated using the following components:
 - transaction hash
 - witnesses with index beyond input cell length
 
@@ -41,11 +41,21 @@ As designed, the `Sighash` variant doesn't include typed message part.
 
 ## Dapp Changes
 
-Firstly, we need to define some actions for the Dapp. For example, if the Dapp is an NFT application, it should include several action types: Mint, Transfer, or Melt. We can pass some parameters in these actions to indicate "who created this NFT," "to whom this NFT should be transferred," etc. The relevant definition file can be found [here](https://github.com/cryptape/ckb-typed-message-poc/blob/main/schemas/spore.mol). The definition file should be public, accessible to anyone.
+Firstly, we need to define some actions for the Dapp. For example, if the Dapp
+is an NFT application, it should include several action types: Mint, Transfer,
+or Melt. We can pass some parameters in these actions to indicate "who created
+this NFT," "to whom this NFT should be transferred," etc. An example definition
+file can be found
+[here](https://github.com/cryptape/ckb-typed-message-poc/blob/main/schemas/spore.mol).
+The definition file should be public, accessible to anyone.
 
-When a user attempts a certain action, such as transferring an NFT to another person, the Dapp should send the constructed `Transaction` and `SigningAction` together to the wallet. The construction of the SigningAction is relatively complex and can be referenced in the diagram below.
+When a user attempts a certain action, such as transferring an NFT to another
+person, the Dapp should send the constructed `SigningAction` to the wallet. The
+construction of the SigningAction is relatively complex and can be referenced in
+the diagram below.
 
-The detailed steps can be found by reading our POC code.
+The detailed steps can be found by reading [the
+code](https://github.com/cryptape/ckb-typed-message-poc/blob/main/dapp/src/tmTransferSpore.ts).
 
 ```
                                                                              ┌────────────────────┐
@@ -71,15 +81,35 @@ The detailed steps can be found by reading our POC code.
 └────────────────────────────┘    └───────────────┘     └────────────────┘   └────────────────────┘
 ```
 
+Note that the Message field in the SigningAction is referred to as the typed
+message. This typed message may vary depending on the DApp. It is constructed by
+the DApp and displayed on the wallet. From the perspective of the lock script,
+the typed message is treated as a black box.
+
+
+The DApp will receive a signature if the wallet users approve and sign it. After
+that, the DApp can fill the signature in the lock field in SighashWithAction and
+broadcast the transaction to the CKB p2p network.
+
+In most scenarios, the size of the SigningAction is significantly smaller than
+the transaction itself. Therefore, it is not necessary to send the entire
+transaction along with the SigningAction. The SigningAction contains sufficient
+information, making it easy to implement Wallet RPC/API functionality.
+
 ## Wallet Changes
 
-When the wallet receives the Transaction and SigningAction, it should verify the following information:
+When the wallet receives the SigningAction, it should perform [the following steps](https://github.com/cryptape/ckb-typed-message-poc/blob/main/dapp/src/tmWallet.ts):
 
-1. Check if the DappInfoHash in each Action corresponds to the DappInfo.
-2. Verify the SkeletonHash.
-3. Display the Message on the screen and wait for the user to click the confirm button.
-4. Calculate digest_message: digest_message = hash(skeleton_hash + message_len + message), where message_len is represented in 64-bit little-endian format.
-5. Combine digest_message and lock into SighashWithAction, serialize it, and write it into the corresponding witness.
+- Verify if the DappInfoHash in each Action corresponds to the DappInfo.
+- Display the Typed Message and DappInfo on the screen and wait for the user to confirm.
+- When the user clicks the confirm button, calculate the digest message based on
+  the skeleton hash and typed message and sign it.
+- Send the signature back to the DApp.
+
 
 ## Others
-The type script changes are not covered in this document.
+
+The changes to the type script are not covered in this document. Essentially,
+the type script should parse the typed message and verify that the information
+contained within it is true, according to the transaction.
+
