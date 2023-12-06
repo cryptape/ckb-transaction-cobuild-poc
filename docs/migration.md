@@ -8,7 +8,7 @@ The changes to the lock script are relatively simple. A TL;DR version is to only
 line of code to existing project(See
 [example](https://github.com/cryptape/ckb-typed-message-poc/blob/76676d0b229c914743b0204931b98f4c8e4e71e6/contracts/typed-message-lock-demo/src/entry.rs#L20)):
 ```Rust
-let (message_digest, lock) = parse_typed_message()?;
+let (message_digest, seal) = parse_message()?;
 ```
 After making this change, the parsed values will be used in the signature
 validation process.

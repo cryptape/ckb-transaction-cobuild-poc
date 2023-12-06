@@ -14,9 +14,9 @@ enable_type_id = false
 location = { file = "../../build/auth" }
 
 [[cells]]
-name = "typed-message-lock-demo"
+name = "transaction-cobuild-lock-demo"
 enable_type_id = false
-location = { file = "../../build/release/typed-message-lock-demo" }
+location = { file = "../../build/release/transaction-cobuild-lock-demo" }
 
 # The lock script set to output cells
 [lock]

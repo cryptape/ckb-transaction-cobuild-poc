@@ -1,5 +1,5 @@
 use ckb_std::error::SysError;
-use ckb_typed_message;
+use ckb_transaction_cobuild;
 
 /// Error
 #[repr(i8)]
@@ -27,13 +27,13 @@ impl From<SysError> for Error {
     }
 }
 
-impl From<ckb_typed_message::Error> for Error {
-    fn from(err: ckb_typed_message::Error) -> Self {
+impl From<ckb_transaction_cobuild::Error> for Error {
+    fn from(err: ckb_transaction_cobuild::Error) -> Self {
         match err {
-            ckb_typed_message::Error::Sys(e) => e.into(),
-            ckb_typed_message::Error::MoleculeEncoding => Error::Encoding,
-            ckb_typed_message::Error::WrongSighashAll => Error::WrongSighashWithAction,
-            ckb_typed_message::Error::WrongWitnessLayout => Error::WrongWitnessLayout,
+            ckb_transaction_cobuild::Error::Sys(e) => e.into(),
+            ckb_transaction_cobuild::Error::MoleculeEncoding => Error::Encoding,
+            ckb_transaction_cobuild::Error::WrongSighashAll => Error::WrongSighashWithAction,
+            ckb_transaction_cobuild::Error::WrongWitnessLayout => Error::WrongWitnessLayout,
         }
     }
 }

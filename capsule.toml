@@ -9,5 +9,5 @@ version = "0.10.2 5e49142"
 deployment = "deployment.toml"
 
 [[contracts]]
-name = "typed-message-lock-demo"
+name = "transaction-cobuild-lock-demo"
 template_type = "Rust"

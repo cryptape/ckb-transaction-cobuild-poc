@@ -90,7 +90,7 @@ pub fn fetch_sighash_all() -> Result<SighashAll, Error> {
 }
 
 ///
-/// for lock script with typed message, the other witness in script group except
+/// for lock script with message, the other witness in script group except
 /// first one should be empty
 ///
 pub fn check_others_in_group() -> Result<(), Error> {
@@ -132,11 +132,11 @@ pub fn generate_skeleton_hash() -> Result<[u8; 32], Error> {
     Ok(output)
 }
 
-pub fn generate_message_digest(skeleton_hash: &[u8; 32], typed_message: &[u8]) -> [u8; 32] {
+pub fn generate_message_digest(skeleton_hash: &[u8; 32], message: &[u8]) -> [u8; 32] {
     let mut hasher = new_blake2b();
     hasher.update(&skeleton_hash[..]);
-    hasher.update(&(typed_message.len() as u64).to_le_bytes());
-    hasher.update(typed_message);
+    hasher.update(&(message.len() as u64).to_le_bytes());
+    hasher.update(message);
     let mut output = [0u8; 32];
     hasher.finalize(&mut output);
     return output;
@@ -173,7 +173,7 @@ pub fn parse_message() -> Result<([u8; 32], Vec<u8>), Error> {
     let sighash_all = fetch_sighash_all()?;
     // There are 2 possible values: SighashAllOnly or SighashAll
     let witness = fetch_sighash()?;
-    let (lock, typed_message) = match witness.to_enum() {
+    let (lock, message) = match witness.to_enum() {
         WitnessLayoutUnion::SighashAll(s) => (s.seal(), s.message()),
         WitnessLayoutUnion::SighashAllOnly(s) => (s.seal(), sighash_all.message()),
         _ => {
@@ -181,6 +181,6 @@ pub fn parse_message() -> Result<([u8; 32], Vec<u8>), Error> {
         }
     };
     let skeleton_hash = generate_skeleton_hash()?;
-    let message_digest = generate_message_digest(&skeleton_hash, typed_message.as_slice());
+    let message_digest = generate_message_digest(&skeleton_hash, message.as_slice());
     Ok((message_digest, lock.raw_data().into()))
 }

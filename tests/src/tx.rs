@@ -1,5 +1,5 @@
 use super::*;
-use ckb_testtool::ckb_crypto::secp::{Generator, Message, Privkey};
+use ckb_testtool::ckb_crypto::secp::{Generator, Message as SecpMessage, Privkey};
 use ckb_testtool::ckb_hash::new_blake2b;
 use ckb_testtool::ckb_types::{
     bytes::Bytes,
@@ -8,25 +8,24 @@ use ckb_testtool::ckb_types::{
     prelude::*,
 };
 use ckb_testtool::context::Context;
-use ckb_typed_message::schemas::{
-    basic::{Sighash, SighashWithAction, TypedMessage},
+use ckb_transaction_cobuild::schemas::{
+    basic::{Message, SighashAll, SighashAllOnly},
     blockchain,
-    // blockchain::{BytesOpt, WitnessArgs},
-    top_level::{ExtendedWitness, ExtendedWitnessUnion},
+    top_level::{WitnessLayout, WitnessLayoutUnion},
 };
 use molecule::prelude::*;
 use rand::{thread_rng, RngCore};
 
-pub struct TypedMsgData {
+pub struct MessageData {
     pub privkey: Privkey,
     pub pubkey_hash: [u8; 20],
     pub group_size: usize,
-    pub action: Option<TypedMessage>,
+    pub action: Option<Message>,
     pub sign: Option<Vec<u8>>,
 
     pub config_failed_pubkey_hash: bool,
 }
-impl TypedMsgData {
+impl MessageData {
     pub fn new(group_size: usize) -> Self {
         let privkey = Generator::random_privkey();
         let pubkey_hash = {
@@ -47,17 +46,17 @@ impl TypedMsgData {
         }
     }
 
-    pub fn new_extended_witness(&self) -> ExtendedWitness {
+    pub fn new_extended_witness(&self) -> WitnessLayout {
         let sign = match &self.sign {
             Some(v) => v.clone(),
             None => [0u8; 65].to_vec(),
         };
 
         match &self.action {
-            Some(action) => ExtendedWitness::new_builder()
-                .set(ExtendedWitnessUnion::SighashWithAction(
-                    SighashWithAction::new_builder()
-                        .lock(
+            Some(action) => WitnessLayout::new_builder()
+                .set(WitnessLayoutUnion::SighashAll(
+                    SighashAll::new_builder()
+                        .seal(
                             blockchain::Bytes::new_builder()
                                 .set(sign.iter().map(|f| f.clone().into()).collect())
                                 .build(),
@@ -67,10 +66,10 @@ impl TypedMsgData {
                         .into(),
                 ))
                 .build(),
-            None => ExtendedWitness::new_builder()
-                .set(ExtendedWitnessUnion::Sighash(
-                    Sighash::new_builder()
-                        .lock(
+            None => WitnessLayout::new_builder()
+                .set(WitnessLayoutUnion::SighashAllOnly(
+                    SighashAllOnly::new_builder()
+                        .seal(
                             blockchain::Bytes::new_builder()
                                 .set(sign.iter().map(|f| f.clone().into()).collect())
                                 .build(),
@@ -91,57 +90,52 @@ impl TypedMsgData {
     }
 }
 
-pub struct TypedMsgWitnesses {
-    pub typed_msg_datas: Vec<TypedMsgData>,
-    pub others: Vec<ExtendedWitness>,
+pub struct MessageWitnesses {
+    pub message_data: Vec<MessageData>,
+    pub others: Vec<WitnessLayout>,
 }
-impl TypedMsgWitnesses {
-    pub fn new(groups_size: Vec<usize>, others: Vec<ExtendedWitness>) -> Self {
-        let mut typed_msg_datas = Vec::new();
+
+impl MessageWitnesses {
+    pub fn new(groups_size: Vec<usize>, others: Vec<WitnessLayout>) -> Self {
+        let mut message_data = Vec::new();
         for group_size in groups_size {
-            typed_msg_datas.push(TypedMsgData::new(group_size));
+            message_data.push(MessageData::new(group_size));
         }
 
         Self {
-            typed_msg_datas,
+            message_data,
             others,
         }
     }
 
     pub fn update(&mut self) {
-        for d in &mut self.typed_msg_datas {
+        for d in &mut self.message_data {
             d.update_config();
         }
     }
 
     pub fn set_with_action(&mut self, index: usize) {
-        use ckb_typed_message::schemas::basic::{Action, ScriptAction, TypedMessageV1};
+        use ckb_transaction_cobuild::schemas::basic::{Action, ActionVec};
 
-        let script_actions = vec![
-            ScriptAction::new_builder()
-                .script_hash(Self::rng_byte32())
-                .action(
-                    Action::new_builder()
-                        .info_hash(Self::rng_byte32())
-                        .data(Self::rng_bytes(30))
-                        .build(),
-                )
+        let actions = vec![
+            Action::new_builder()
+                .script_info_hash(Self::rng_byte32())
+                .data(Self::rng_bytes(30))
                 .build(),
-            ScriptAction::new_builder()
-                .script_hash(Self::rng_byte32())
+            Action::new_builder()
+                .script_info_hash(Self::rng_byte32())
                 .build(),
         ];
 
-        let msg = TypedMessage::new_builder()
-            .set(TypedMessageV1::new_builder().set(script_actions).build());
+        let msg = Message::new_builder().actions(ActionVec::new_builder().set(actions).build());
 
-        self.typed_msg_datas.get_mut(index).unwrap().action = Some(msg.build());
+        self.message_data.get_mut(index).unwrap().action = Some(msg.build());
     }
 
     pub fn get_witnesses(&self) -> Vec<Bytes> {
         let mut witnesses = Vec::new();
 
-        for data in &self.typed_msg_datas {
+        for data in &self.message_data {
             let d = data.new_extended_witness();
             witnesses.push(d.as_bytes());
 
@@ -157,8 +151,8 @@ impl TypedMsgWitnesses {
         witnesses
     }
 
-    pub fn get_action(&self) -> &TypedMessage {
-        for d in &self.typed_msg_datas {
+    pub fn get_action(&self) -> &Message {
+        for d in &self.message_data {
             if d.action.is_some() {
                 return d.action.as_ref().unwrap();
             }
@@ -166,10 +160,10 @@ impl TypedMsgWitnesses {
         panic!("none")
     }
 
-    pub fn get_types_data_by_args(&self, args: &[u8]) -> &TypedMsgData {
+    pub fn get_types_data_by_args(&self, args: &[u8]) -> &MessageData {
         assert_eq!(args.len(), 20);
 
-        for d in &self.typed_msg_datas {
+        for d in &self.message_data {
             if d.pubkey_hash == args {
                 return d;
             }
@@ -219,16 +213,16 @@ fn append_cells(context: &mut Context) -> (OutPoint, TransactionBuilder) {
         );
 
     (
-        context.deploy_cell(loader.load_binary("typed-message-lock-demo")),
+        context.deploy_cell(loader.load_binary("transaction-cobuild-lock-demo")),
         tx,
     )
 }
 
-pub fn gen_tx(witnesses: &TypedMsgWitnesses) -> (TransactionView, Context) {
+pub fn gen_tx(witnesses: &MessageWitnesses) -> (TransactionView, Context) {
     let mut context = Context::default();
     let (out_point, mut tx) = append_cells(&mut context);
 
-    for data in &witnesses.typed_msg_datas {
+    for data in &witnesses.message_data {
         for _ in 0..data.group_size {
             let lock_script = context
                 .build_script(&out_point, Bytes::from(data.pubkey_hash.to_vec()))
@@ -309,12 +303,12 @@ fn witness_is_empty(tx: &TransactionView, index: usize) -> bool {
     false
 }
 
-pub fn sign_tx(witnesses: &mut TypedMsgWitnesses, tx: TransactionView) -> TransactionView {
+pub fn sign_tx(witnesses: &mut MessageWitnesses, tx: TransactionView) -> TransactionView {
     // get sign message
     let skeleton_hash = generate_skeleton_hash(&tx);
 
-    let typed_msg = witnesses.get_action().as_slice().to_vec();
-    let mut typed_data_count = 0usize;
+    let msg = witnesses.get_action().as_slice().to_vec();
+    let mut data_count = 0usize;
     for i in 0..tx.inputs().len() {
         if witness_is_empty(&tx, i) {
             continue;
@@ -322,27 +316,23 @@ pub fn sign_tx(witnesses: &mut TypedMsgWitnesses, tx: TransactionView) -> Transa
 
         let mut hasher = new_blake2b();
         hasher.update(&skeleton_hash);
-        hasher.update(&typed_msg.len().to_le_bytes());
-        hasher.update(&typed_msg);
+        hasher.update(&msg.len().to_le_bytes());
+        hasher.update(&msg);
 
         let mut message_digest = [0u8; 32];
         hasher.finalize(&mut message_digest);
 
         let sign = witnesses
-            .typed_msg_datas
-            .get(typed_data_count)
+            .message_data
+            .get(data_count)
             .unwrap()
             .privkey
-            .sign_recoverable(&Message::from_slice(&message_digest).unwrap())
+            .sign_recoverable(&SecpMessage::from_slice(&message_digest).unwrap())
             .expect("sign")
             .serialize();
 
-        witnesses
-            .typed_msg_datas
-            .get_mut(typed_data_count)
-            .unwrap()
-            .sign = Some(sign);
-        typed_data_count += 1;
+        witnesses.message_data.get_mut(data_count).unwrap().sign = Some(sign);
+        data_count += 1;
     }
 
     let witnesses = witnesses.get_witnesses();

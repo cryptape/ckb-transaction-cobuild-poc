@@ -2,7 +2,7 @@ use ckb_std::{
     ckb_types::{bytes::Bytes, core::ScriptHashType, prelude::*},
     high_level::load_script,
 };
-use ckb_typed_message::parse_message;
+use ckb_transaction_cobuild::parse_message;
 use core::result::Result;
 
 use crate::error::Error;
@@ -17,7 +17,7 @@ const AUTH_CODE_HASH: [u8; 32] = [
 ];
 
 pub fn main() -> Result<(), Error> {
-    let (message_digest, lock) = parse_message()?;
+    let (message_digest, seal) = parse_message()?;
 
     let mut pubkey_hash = [0u8; 20];
     let script = load_script()?;
@@ -35,7 +35,7 @@ pub fn main() -> Result<(), Error> {
         entry_category: EntryCategoryType::DynamicLinking,
     };
 
-    ckb_auth(&entry, &id, &lock, &message_digest).map_err(|_| Error::AuthError)?;
+    ckb_auth(&entry, &id, &seal, &message_digest).map_err(|_| Error::AuthError)?;
 
     Ok(())
 }

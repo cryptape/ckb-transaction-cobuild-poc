@@ -12,7 +12,7 @@
                 "output": {
                     "capacity": "0xd3f811900",
                     "lock": {
-                        "code_hash": "0x{{ ref_type typed-message-lock-demo }}",
+                        "code_hash": "0x{{ ref_type transaction-cobuild-lock-demo }}",
                         "hash_type": "type",
                         "args": "0x75178f34549c5fe9cd1a0c57aebd01e7ddf9249e"
                     },
@@ -122,9 +122,9 @@
                         "hash_type": "type",
                         "args": "0x75178f34549c5fe9cd1a0c57aebd01e7ddf9249e"
                     },
-                    "type": "{{ def_type typed-message-lock-demo }}"
+                    "type": "{{ def_type transaction-cobuild-lock-demo }}"
                 },
-                "data": "0x{{ data ../../build/release/typed-message-lock-demo }}",
+                "data": "0x{{ data ../../build/release/transaction-cobuild-lock-demo }}",
                 "header": null
             },
             {

@@ -18,7 +18,7 @@ fn assert_script_error(err: Error, err_code: i8) {
 fn test_success() {
     let others_witnesses = vec![];
 
-    let mut witnesses = TypedMsgWitnesses::new(vec![3, 1, 2], others_witnesses);
+    let mut witnesses = MessageWitnesses::new(vec![3, 1, 2], others_witnesses);
     witnesses.set_with_action(1);
 
     // deploy contract
@@ -35,9 +35,9 @@ fn test_success() {
 fn test_failed_pubkey() {
     let others_witnesses = vec![];
 
-    let mut witnesses = TypedMsgWitnesses::new(vec![3, 1, 2], others_witnesses);
+    let mut witnesses = MessageWitnesses::new(vec![3, 1, 2], others_witnesses);
     witnesses.set_with_action(1);
-    witnesses.typed_msg_datas[2].config_failed_pubkey_hash = true;
+    witnesses.message_data[2].config_failed_pubkey_hash = true;
 
     witnesses.update();
 
