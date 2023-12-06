@@ -134,7 +134,7 @@ pub fn generate_skeleton_hash() -> Result<[u8; 32], Error> {
     Ok(output)
 }
 
-pub fn generate_final_hash(skeleton_hash: &[u8; 32], typed_message: &[u8]) -> [u8; 32] {
+pub fn generate_message_digest(skeleton_hash: &[u8; 32], typed_message: &[u8]) -> [u8; 32] {
     let mut hasher = new_blake2b();
     hasher.update(&skeleton_hash[..]);
     hasher.update(&(typed_message.len() as u64).to_le_bytes());
@@ -165,7 +165,7 @@ fn calculate_inputs_len() -> Result<usize, SysError> {
 
 ///
 /// parse transaction with typed message and return 2 values:
-/// 1. digest message, 32 bytes message for signature verification
+/// 1. message digest, 32 bytes message for signature verification
 /// 2. lock, lock field in SighashWithAction or Sighash. Normally as signature.
 /// This function is mainly used by lock script
 ///
@@ -183,6 +183,6 @@ pub fn parse_typed_message() -> Result<([u8; 32], Vec<u8>), Error> {
         }
     };
     let skeleton_hash = generate_skeleton_hash()?;
-    let digest_message = generate_final_hash(&skeleton_hash, typed_message.as_slice());
-    Ok((digest_message, lock.raw_data().into()))
+    let message_digest = generate_message_digest(&skeleton_hash, typed_message.as_slice());
+    Ok((message_digest, lock.raw_data().into()))
 }

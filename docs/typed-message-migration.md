@@ -8,18 +8,18 @@ The changes to the lock script are relatively simple. A TL;DR version is to only
 line of code to existing project(See
 [example](https://github.com/cryptape/ckb-typed-message-poc/blob/76676d0b229c914743b0204931b98f4c8e4e71e6/contracts/typed-message-lock-demo/src/entry.rs#L20)):
 ```Rust
-let (digest_message, lock) = parse_typed_message()?;
+let (message_digest, lock) = parse_typed_message()?;
 ```
 After making this change, the parsed values will be used in the signature
 validation process.
 
-In the previous implementation of the lock script, the digest_message and lock
+In the previous implementation of the lock script, the message_digest and lock
 values were calculated or parsed from the transaction hash and witness. You can
 refer to the [system
 script](https://github.com/nervosnetwork/ckb-system-scripts/blob/master/c/secp256k1_blake160_sighash_all.c)
 for more details on how these values were derived.
 
-With the added support for typed messages, the digest message is calculated using the following components:
+With the added support for typed messages, the message digest is calculated using the following components:
 - skeleton hash
 - typed message
 
@@ -27,7 +27,7 @@ The [skeleton hash]((https://github.com/cryptape/ckb-typed-message-poc/blob/7667
 - transaction hash
 - witnesses with index beyond input cell length
 
-The final digest message can make the following parts not malleable:
+The final message digest can make the following parts not malleable:
 - transaction
 - witnesses used by all type scripts
 - extract witnesses with index beyond input cell length
@@ -101,7 +101,7 @@ When the wallet receives the SigningAction, it should perform [the following ste
 
 - Verify if the DappInfoHash in each Action corresponds to the DappInfo.
 - Display the Typed Message and DappInfo on the screen and wait for the user to confirm.
-- When the user clicks the confirm button, calculate the digest message based on
+- When the user clicks the confirm button, calculate the message digest based on
   the skeleton hash and typed message and sign it.
 - Send the signature back to the DApp.
 

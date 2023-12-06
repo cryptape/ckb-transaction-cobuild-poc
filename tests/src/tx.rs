@@ -325,15 +325,15 @@ pub fn sign_tx(witnesses: &mut TypedMsgWitnesses, tx: TransactionView) -> Transa
         hasher.update(&typed_msg.len().to_le_bytes());
         hasher.update(&typed_msg);
 
-        let mut digest_message = [0u8; 32];
-        hasher.finalize(&mut digest_message);
+        let mut message_digest = [0u8; 32];
+        hasher.finalize(&mut message_digest);
 
         let sign = witnesses
             .typed_msg_datas
             .get(typed_data_count)
             .unwrap()
             .privkey
-            .sign_recoverable(&Message::from_slice(&digest_message).unwrap())
+            .sign_recoverable(&Message::from_slice(&message_digest).unwrap())
             .expect("sign")
             .serialize();
 
