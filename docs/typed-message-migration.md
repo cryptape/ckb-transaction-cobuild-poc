@@ -59,23 +59,22 @@ code](https://github.com/cryptape/ckb-typed-message-poc/blob/main/dapp/src/tmTra
 
 ```
                                                                              ┌────────────────────┐
-                                                                             │                    │
                                                                              │    SigningAction   │
               ┌───────────────┐                                              ├────────────────────┤
               │    DappInfo   │                                              │                    │
               ├───────────────┤                                              │  Flags             │
-              │ Name          │                                              │  (Always 0)        │
+              │  Name         │                                              │  (Always 0)        │
 ┌───────────┐ │               │                                              │                    │
-│  schema   │ │ Url           │   ┌───────────────┐     ┌────────────────┐   │  Address           │
+│  schema   │ │  Url          │   ┌───────────────┐     ┌────────────────┐   │  Address           │
 ├───────────┤ │               │   │    Action     │     │  ScriptAction  │   │  (Lock script)     │
-│  Mint     │ │ ScriptHash    │   ├───────────────┤     ├────────────────┤   │                    │
-│           │ │               │   │               │     │                ├───┼─> Message          │
+│  Mint     │ │  ScriptHash   │   ├───────────────┤     ├────────────────┤   │                    │
+│           │ │               │   │               │     │                ├───┼─>Message           │
 │  Transfer ├─┼─>Schema       ├───┼─>DappInfoHash ├─────┼─>Action        │   │                    │
 │           │ │               │   │               │     │                │   │  SkeletonHash      │
-│  Melt     │ │ MessageType   │   │               │     │                │   │                    │
+│  Melt     │ │  MessageType  │   │               │     │                │   │                    │
 └───────────┘ └───────────────┘   │               │     │                │   │  Infos             │
-                                  │               │     │ ScriptHash     │   │  (Raw data of      │
-┌────────────────────────────┐    │               │     │ (Dapp's type   │   │   DappInfo)        │
+                                  │               │     │  ScriptHash    │   │  (Raw data of      │
+┌────────────────────────────┐    │               │     │  (Dapp's type  │   │   DappInfo)        │
 │ Transfer my NFT to jack!   ├────┼─>Data         │     │  script hash)  │   │                    │
 │                            │    │               │     │                │   │  Scratch           │
 └────────────────────────────┘    └───────────────┘     └────────────────┘   └────────────────────┘
@@ -112,4 +111,3 @@ When the wallet receives the SigningAction, it should perform [the following ste
 The changes to the type script are not covered in this document. Essentially,
 the type script should parse the typed message and verify that the information
 contained within it is true, according to the transaction.
-
