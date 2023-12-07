@@ -108,8 +108,8 @@ import { SporeConfig, PredefinedSporeConfigScriptName } from '@spore-sdk/core';
 //     },
 //     cellDep: {
 //         outPoint: {
-//             txHash: '0x66e844b7a3002d5a389e41aa7adcbab0dbb412fa145449b3ab39ea6f2b39dbaa',
-//             index: '0x0',
+//             txHash: '0xd97996a6afd37f2656c94c356b33edd0bbe0cc1a817ad2215f69c7c551077301',
+//             index: '0x2',
 //         },
 //         depType: 'code' as DepType,
 //     }
@@ -117,13 +117,13 @@ import { SporeConfig, PredefinedSporeConfigScriptName } from '@spore-sdk/core';
 
 // export const configTransactionCobuildLockDemo = {
 //     script: {
-//         codeHash: '0x81046990df3542a0563555af6b863fa4ec8d1d60d77ed8d654d981c7c015f6b2',
+//         codeHash: '0xbce10030b8dea1ada7efa45ea6fa981bb59ce61d53cd9e34815641a80667501a',
 //         hashType: 'data1' as HashType,
 //     },
 //     cellDep: {
 //         outPoint: {
-//             txHash: '0x66e844b7a3002d5a389e41aa7adcbab0dbb412fa145449b3ab39ea6f2b39dbaa',
-//             index: '0x1',
+//             txHash: '0xd97996a6afd37f2656c94c356b33edd0bbe0cc1a817ad2215f69c7c551077301',
+//             index: '0x3',
 //         },
 //         depType: 'code' as DepType,
 //     }
@@ -189,8 +189,8 @@ export const configAuth = {
     },
     cellDep: {
         outPoint: {
-            txHash: '0x27ce6f8e9032d40334948904b5a769587eaf0d8e79e1b51a80c9ba0616e102f2',
-            index: '0x0',
+            txHash: '0x501e34a53e996602b618674f0f3c56b2cf8a6834f0e360935bfd780a1fc78b97',
+            index: '0x2',
         },
         depType: 'code' as DepType,
     }
@@ -198,13 +198,13 @@ export const configAuth = {
 
 export const configTransactionCobuildLockDemo = {
     script: {
-        codeHash: '0x81046990df3542a0563555af6b863fa4ec8d1d60d77ed8d654d981c7c015f6b2',
+        codeHash: '0xbce10030b8dea1ada7efa45ea6fa981bb59ce61d53cd9e34815641a80667501a',
         hashType: 'data1' as HashType,
     },
     cellDep: {
         outPoint: {
-            txHash: '0x068660a7f5d97f6e4adf34983c5223a02b2caf0bc139d083ab9244c4dc309da9',
-            index: '0x0',
+            txHash: '0x501e34a53e996602b618674f0f3c56b2cf8a6834f0e360935bfd780a1fc78b97',
+            index: '0x3',
         },
         depType: 'code' as DepType,
     }
