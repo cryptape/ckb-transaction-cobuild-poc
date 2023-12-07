@@ -463,7 +463,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "ckb-typed-message"
+name = "ckb-transaction-cobuild"
 version = "0.1.0"
 dependencies = [
  "blake2b-ref",
@@ -1369,7 +1369,7 @@ version = "0.1.0"
 dependencies = [
  "ckb-auth-rs",
  "ckb-testtool",
- "ckb-typed-message",
+ "ckb-transaction-cobuild",
  "molecule",
  "rand 0.6.5",
 ]

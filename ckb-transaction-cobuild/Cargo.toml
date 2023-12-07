@@ -1,5 +1,5 @@
 [package]
-name = "ckb-typed-message"
+name = "ckb-transaction-cobuild"
 version = "0.1.0"
 edition = "2021"
 

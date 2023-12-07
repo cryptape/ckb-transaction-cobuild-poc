@@ -1,7 +1,7 @@
-# ckb-typed-message(PoC)
-This project is a proof of concept that aims to demonstrate how to adopt typed
-messages (similar to EIP-712) in CKB scripts. It also includes extended
-witnesses to simplify signing and DApp interoperability.
+# CKB Transaction Co-Build Protocol(TCoB)
+This project is a proof of concept that aims to demonstrate how to adopt
+transaction co-build protocol and message (similar to EIP-712) in CKB. It also
+includes witnesses layout change to simplify signing and DApp interoperability.
 
 
 ## Build
@@ -16,13 +16,13 @@ See [dapp](./dapp/README.md), using Lumos and Spore SDK.
 
 
 ## Project Structure
-* ckb-typed-message
+* ckb-transaction-cobuild
 
-    A library for writing scripts with typed message support.
+    A library for writing scripts to support CKB transaction co-build protocol.
 
-* contracts/typed-message-lock-demo
+* contracts/transaction-cobuild-lock-demo
 
-    A demo lock demonstrating how to write a lock script with typed message support.
+    A demo lock demonstrating how to write a lock script.
 
 * dapp
 

@@ -1,13 +1,14 @@
-import { utils } from '@ckb-lumos/base';
+import { blockchain, utils } from '@ckb-lumos/base';
 import { UnpackResult, bytes } from "@ckb-lumos/codec";
 import { common } from '@ckb-lumos/common-scripts';
 import { BI } from '@ckb-lumos/lumos';
 import { transferSpore } from '@spore-sdk/core';
+import { createTransactionFromSkeleton } from "@ckb-lumos/helpers";
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import { generateSkeletonHash, setupInputCell } from './tmBuild';
-import { config, configTypedMessageLockDemo } from './tmConfig';
-import { Action, DappInfo, ScriptAction, SighashWithAction, SigningAction, SporeAction } from './tmMolecule';
+import { config, configTransactionCobuildLockDemo } from './tmConfig';
+import { Action, ActionVec, ScriptInfo, Message, SighashAll, SporeAction, BuildingPacket } from './tmMolecule';
 import { tmAccounts } from './tmWallet';
 const { ckbHash, computeScriptHash } = utils;
 const { registerCustomLockScriptInfos } = common;
@@ -20,8 +21,8 @@ export async function fetchLocalFile(src: string) {
 async function main() {
     registerCustomLockScriptInfos([
         {
-            codeHash: configTypedMessageLockDemo.script.codeHash,
-            hashType: configTypedMessageLockDemo.script.hashType,
+            codeHash: configTransactionCobuildLockDemo.script.codeHash,
+            hashType: configTransactionCobuildLockDemo.script.hashType,
             lockScriptInfo: {
                 CellCollector: null,
                 setupInputCell: setupInputCell,
@@ -33,28 +34,25 @@ async function main() {
 
     let { txSkeleton } = await transferSpore({
         outPoint: {
-            txHash: '0xd8f228f2347c58f10644736cf1b961f61eca42d92eb067334c93fd43509089c4',
+            txHash: '0xdf3bdc04ca7bf89b5bc146d01318b6405170c776e91282b181d42cb3fd746022',
             index: '0x0',
         },
         toLock: tmAccounts.bob.lock,
         config: config,
     });
 
-    let dappInfo: UnpackResult<typeof DappInfo> = {
-        type: 'DappInfoV1',
-        value: {
-            name: bytes.hexify(bytes.bytifyRawString('spore')),
-            url: bytes.hexify(bytes.bytifyRawString('https://a-simple-demo.spore.pro')),
-            scriptHash: computeScriptHash({
-                codeHash: config.scripts.Spore.script.codeHash,
-                hashType: config.scripts.Spore.script.hashType,
-                args: txSkeleton.outputs.get(0).cellOutput.type!.args,
-            }),
-            schema: bytes.hexify(new Uint8Array(await fetchLocalFile('../../schemas/spore.mol'))),
-            messageType: bytes.hexify(bytes.bytifyRawString('SporeAction')),
-        }
+    let scriptInfo: UnpackResult<typeof ScriptInfo> = {
+        name: bytes.hexify(bytes.bytifyRawString('spore')),
+        url: bytes.hexify(bytes.bytifyRawString('https://a-simple-demo.spore.pro')),
+        scriptHash: computeScriptHash({
+            codeHash: config.scripts.Spore.script.codeHash,
+            hashType: config.scripts.Spore.script.hashType,
+            args: txSkeleton.outputs.get(0).cellOutput.type!.args,
+        }),
+        schema: bytes.hexify(new Uint8Array(await fetchLocalFile('../../schemas/spore.mol'))),
+        messageType: bytes.hexify(bytes.bytifyRawString('SporeAction')),
     };
-    let dappInfoHash = ckbHash(DappInfo.pack(dappInfo));
+    let scriptInfoHash = ckbHash(ScriptInfo.pack(scriptInfo));
     let sporeID = txSkeleton.outputs.get(0).cellOutput.type!.args;
     let sporeTransferTo = txSkeleton.outputs.get(0).cellOutput.lock;
     let actionData = bytes.hexify(SporeAction.pack({
@@ -68,48 +66,42 @@ async function main() {
         },
     }))
     let action: UnpackResult<typeof Action> = {
-        infoHash: dappInfoHash,
+        scriptInfoHash: scriptInfoHash,
+        scriptHash: scriptInfo.scriptHash,
         data: actionData,
     };
-    let scriptAction: UnpackResult<typeof ScriptAction> = {
-        scriptHash: dappInfo.value.scriptHash,
-        action: action,
+    let message: UnpackResult<typeof Message> = {
+        actions: [action],
     };
-    let signingActionMessage = [scriptAction];
-    let signingActionSignature = '0x' + '0'.repeat(130);
-    let sighashWithAction = SighashWithAction.pack({
-        lock: signingActionSignature,
-        message: {
-            type: 'TypedMessageV1',
-            value: signingActionMessage,
-        },
+    let sighashAll = SighashAll.pack({
+        seal: '0x' + '0'.repeat(130),
+        message: message,
     })
-    let witness0 = '0x010000ff' + bytes.hexify(sighashWithAction).slice(2);
+    let witness0 = '0x010000ff' + bytes.hexify(sighashAll).slice(2);
     let extraFee = (witness0.length - 2) / 2 - 85
     txSkeleton.outputs.get(0).cellOutput.capacity = '0x' + (parseInt(txSkeleton.outputs.get(0).cellOutput.capacity, 16) - extraFee).toString(16)
-    let signingAction: UnpackResult<typeof SigningAction> = {
-        flags: BI.from(0),
-        address: {
-            type: 'Script',
-            value: txSkeleton.inputs.get(0).cellOutput.lock,
-        },
-        message: {
-            type: 'TypedMessageV1',
-            value: signingActionMessage,
-        },
-        skeletonHash: generateSkeletonHash(txSkeleton),
-        infos: [dappInfo],
-        scratch: null,
-    }
 
-    let signingEntries = txSkeleton.get("signingEntries");
-    signingEntries = signingEntries.push({
-        type: 'typedMessage',
-        index: 0,
-        message: bytes.hexify(SigningAction.pack(signingAction)),
-    });
-    txSkeleton = txSkeleton.set('signingEntries', signingEntries)
-    let hash = await tmAccounts.alice.signAndSendTransaction(txSkeleton);
+    let buildingPacket = BuildingPacket.pack({
+        type: 'BuildingPacketV1',
+        value: {
+            message: message,
+            payload: createTransactionFromSkeleton(txSkeleton),
+            scriptInfos: [scriptInfo],
+            lockActions: [],
+        }
+    })
+
+
+    // let signingEntries = txSkeleton.get("signingEntries");
+    // signingEntries = signingEntries.push({
+    //     type: 'typedMessage',
+    //     index: 0,
+    //     message: bytes.hexify(SigningAction.pack(signingAction)),
+    // });
+    // txSkeleton = txSkeleton.set('signingEntries', signingEntries)
+
+    let hash = await tmAccounts.alice.signAndSendBuildingPacket(buildingPacket);
+
     console.log(`Spore transfered at: https://pudge.explorer.nervos.org/transaction/${hash}`);
 }
 

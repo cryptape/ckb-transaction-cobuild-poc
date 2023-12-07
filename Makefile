@@ -4,8 +4,8 @@ all:
 	capsule build --release
 
 mol:
-	moleculec --language rust --schema-file schemas/basic.mol > ckb-typed-message/src/schemas/basic.rs
-	moleculec --language rust --schema-file schemas/top_level.mol > ckb-typed-message/src/schemas/top_level.rs
+	moleculec --language rust --schema-file schemas/basic.mol > ckb-transaction-cobuild/src/schemas/basic.rs
+	moleculec --language rust --schema-file schemas/top_level.mol > ckb-transaction-cobuild/src/schemas/top_level.rs
 	cargo fmt
 
 install:

@@ -1,67 +1,56 @@
 import blockchain;
 
-vector String <byte>;
-
-union Address {
-    Script,
-}
-
-option AddressOpt (Address);
+array Hash [byte; 32];
+vector String <byte>; // UTF-8 encoded
 
 table Action {
-    info_hash: Byte32,
-    data: Bytes,
+    script_info_hash: Byte32,   // script info
+    script_hash: Byte32,        // script
+    data: Bytes,              // action data
 }
 
-table ScriptAction {
-    script_hash: Byte32,
-    action: Action,
+vector ActionVec <Action>;
+
+table Message {
+    actions: ActionVec,
 }
 
-vector TypedMessageV1 <ScriptAction>;
-
-union TypedMessage {
-    TypedMessageV1,
-}
-
-table SighashWithAction {
-    lock: Bytes,
-    message: TypedMessage,
-}
-
-table Sighash {
-    lock: Bytes,
-}
-
-table DappInfoV1 {
+table ScriptInfo {
+    // The dapp name and domain the script belongs to
     name: String,
     url: String,
+    
+    // Script info.
+    // schema: script action schema
+    // message_type: the entry action type used in WitnessLayout
     script_hash: Byte32,
     schema: String,
     message_type: String,
 }
 
-union DappInfo {
-    DappInfoV1,
+vector ScriptInfoVec <ScriptInfo>;
+
+table BuildingPacketV1 {
+    message: Message,
+    payload: Transaction,
+    script_infos: ScriptInfoVec,
+    lock_actions: ActionVec,
 }
 
-vector DappInfos <DappInfo>;
-
-union Scratch {
-    ScriptAction,
+union BuildingPacket {
+    BuildingPacketV1,
 }
 
-option ScratchOpt (Scratch);
-
-table SigningAction {
-    flags: Uint64,
-    address: Address,
-    message: TypedMessage,
-    skeleton_hash: Byte32,
-    infos: DappInfos,
-    scratch: ScratchOpt,
+table SighashAll {
+    seal: Bytes,
+    message: Message,
 }
 
+table SighashAllOnly {
+    seal: Bytes,
+}
+
+// TODO: under construction
 table OtxStart {
     start_input_cell: Uint32,
     start_output_cell: Uint32,
@@ -69,11 +58,12 @@ table OtxStart {
     start_header_deps: Uint32,
 }
 
+// TODO: under construction
 table Otx {
     lock: Bytes,
     input_cells: Uint32,
     output_cells: Uint32,
     cell_deps: Uint32,
     header_deps: Uint32,
-    message: TypedMessage,
+    message: Message,
 }
