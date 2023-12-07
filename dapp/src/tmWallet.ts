@@ -10,11 +10,22 @@ import { blockchainTransactionToAPITransaction, generateFinalHash, generateSkele
 import { config, configTransactionCobuildLockDemo } from './tmConfig';
 import { ScriptInfo, SighashAll, Action, BuildingPacket, SporeAction, Message } from './tmMolecule';
 import { txDump } from './txDump';
+import 'process';
 const { computeScriptHash, ckbHash } = utils;
 
 export async function fetchLocalFile(src: string) {
   const buffer = readFileSync(resolve(__dirname, src));
   return new Uint8Array(buffer).buffer;
+}
+
+async function readline(): Promise<string> {
+  return new Promise((resolve, reject) => {
+    process.stdin.resume();
+    process.stdin.on('data', function (data) {
+      process.stdin.pause();
+      resolve(data.toString());
+    })
+  })
 }
 
 export interface Wallet {
@@ -178,29 +189,21 @@ export function createTmLockWallet(privateKey: HexString): Wallet {
     let tx = bp.value.payload;
 
     for (let action of bp.value.message.actions) {
+      let r = bp.value.scriptInfos.filter((x) => x.scriptHash == action.scriptHash!)
+      if (r.length != 1) {
+        throw `cannot found script hash ${action.scriptHash} in building packet script infos.`
+      }
+      console.log(`Dapp name: ${Buffer.from(bytes.bytify(r[0].name).buffer).toString()}`)
+      console.log(`Dapp url: ${Buffer.from(bytes.bytify(r[0].url).buffer).toString()}`)
       let sporeAction = SporeAction.unpack(action.data)
-      console.log(JSON.stringify({
-        'scriptInfoHash': action.scriptInfoHash,
-        'scriptHash': action.scriptHash,
-        'data': sporeAction,
-      }, null, 4))
+      console.log(`Dapp action: ${JSON.stringify(sporeAction, null, 4)}`)
     }
 
-    // let scriptInfo: UnpackResult<typeof ScriptInfo> = {
-    //   name: bytes.hexify(bytes.bytifyRawString('spore')),
-    //   url: bytes.hexify(bytes.bytifyRawString('https://a-simple-demo.spore.pro')),
-    //   scriptHash: computeScriptHash({
-    //     codeHash: config.scripts.Spore.script.codeHash,
-    //     hashType: config.scripts.Spore.script.hashType,
-    //     args: txSkeleton.outputs.get(0).cellOutput.type!.args,
-    //   }),
-    //   schema: bytes.hexify(new Uint8Array(await fetchLocalFile('../../schemas/spore.mol'))),
-    //   messageType: bytes.hexify(bytes.bytifyRawString('SporeAction')),
-    // };
-    // let scriptInfoHash = ckbHash(ScriptInfo.pack(scriptInfo));
-    // if (scriptInfoHash != signingAction.message[0].scriptInfoHash) {
-    //   throw 'Check infoHash failed!'
-    // }
+    console.log('Sign and send the message? [Y]es, [N]o')
+    let userInput = (await readline()).toUpperCase()[0]
+    if (userInput == 'N') {
+      throw `User refuses to sign transaction`
+    }
 
     let skeletonHash = generateSkeletonHash(tx)
     let messageBytes = bytes.hexify(Message.pack(bp.value.message))
