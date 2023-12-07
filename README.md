@@ -18,11 +18,11 @@ See [dapp](./dapp/README.md), using Lumos and Spore SDK.
 ## Project Structure
 * ckb-transaction-cobuild
 
-    A library for writing scripts in CKB transaction co-build protocol.
+    A library for writing scripts to support CKB transaction co-build protocol.
 
 * contracts/transaction-cobuild-lock-demo
 
-    A demo lock demonstrating how to write a lock script
+    A demo lock demonstrating how to write a lock script.
 
 * dapp
 

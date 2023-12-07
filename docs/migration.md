@@ -52,11 +52,10 @@ The definition file should be public, accessible to anyone.
 When a user attempts a certain action, such as transferring an NFT to another
 person, the Dapp should send the constructed `BuildingPacket` to the wallet. The
 construction of the BuildingPacket is relatively complex and can be referenced in
-the diagram below.
+the diagram below:
+![TCoB Data Structures](./TCoB-data-structures.png)
 
 The detailed steps can be found by reading [the code](../dapp/src/tmTransferSpore.ts).
-
-![TCoB Data Structures](./TCoB-data-structures.png)
 
 Note that the Message field in the BuildingPacket plays important role. This
 message may vary depending on the DApp. It is constructed by the DApp and
@@ -78,7 +77,7 @@ steps](../dapp/src/tmWallet.ts):
   the user to confirm.
 - When the user clicks the confirm button, calculate the message digest based on
   the skeleton hash and message and sign it.
-- Send the signature back to the DApp.
+- Send the signature back to DApp.
 
 ## Others
 
