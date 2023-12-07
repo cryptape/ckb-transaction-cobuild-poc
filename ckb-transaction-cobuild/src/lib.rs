@@ -47,7 +47,7 @@ impl From<VerificationError> for Error {
 /// Fetch the corresponding WitnessLayout(SighashAll or SighashAllOnly)
 /// Used by lock script
 ///
-pub fn fetch_sighash() -> Result<WitnessLayout, Error> {
+pub fn fetch_witness_layout() -> Result<WitnessLayout, Error> {
     match load_witness(0, Source::GroupInput) {
         Ok(witness) => {
             if let Ok(r) = WitnessLayoutReader::from_slice(&witness) {
@@ -172,7 +172,7 @@ pub fn parse_message() -> Result<([u8; 32], Vec<u8>), Error> {
     // Ensure that a SighashWitAll is present throughout the entire transaction
     let sighash_all = fetch_sighash_all()?;
     // There are 2 possible values: SighashAllOnly or SighashAll
-    let witness = fetch_sighash()?;
+    let witness = fetch_witness_layout()?;
     let (lock, message) = match witness.to_enum() {
         WitnessLayoutUnion::SighashAll(s) => (s.seal(), s.message()),
         WitnessLayoutUnion::SighashAllOnly(s) => (s.seal(), sighash_all.message()),

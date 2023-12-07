@@ -1,6 +1,6 @@
-# CKB Transaction Cooperate Build(PoC)
+# CKB Transaction Co-Build Protocol(TCoB)
 This project is a proof of concept that aims to demonstrate how to adopt
-transaction cooperate build and message (similar to EIP-712) in CKB. It also
+transaction co-build protocol and message (similar to EIP-712) in CKB. It also
 includes witnesses layout change to simplify signing and DApp interoperability.
 
 
@@ -18,7 +18,7 @@ See [dapp](./dapp/README.md), using Lumos and Spore SDK.
 ## Project Structure
 * ckb-transaction-cobuild
 
-    A library for writing scripts
+    A library for writing scripts in CKB transaction co-build protocol.
 
 * contracts/transaction-cobuild-lock-demo
 
