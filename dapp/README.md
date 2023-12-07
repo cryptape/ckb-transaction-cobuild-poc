@@ -1,4 +1,4 @@
-# Spore with Typed Message
+# Spore with Transaction Co-Build Protocol
 
 ## Create and transfer Spore on dev network
 
@@ -8,8 +8,8 @@ $ npm run tmCreateSpore
 $ npm run tmTransferSpore
 ```
 
-The typed message will be printed out before signing. In a real-life project, a
-popup window should be displayed to users to show these typed messages.
+The message will be printed out before signing. In a real-life project, a
+popup window should be displayed to users to show these messages.
 
 
 ## Create and transfer Spore on testnet
