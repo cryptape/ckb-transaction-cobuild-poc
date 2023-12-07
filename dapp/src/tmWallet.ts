@@ -1,4 +1,4 @@
-import { Address, Hash, HexString, Script, utils } from '@ckb-lumos/base';
+import { Address, Hash, HexString, Script, utils, blockchain } from '@ckb-lumos/base';
 import { UnpackResult, bytes } from "@ckb-lumos/codec";
 import { secp256k1Blake160 } from '@ckb-lumos/common-scripts';
 import { RPC, hd, helpers } from '@ckb-lumos/lumos';
@@ -6,9 +6,10 @@ import { defaultEmptyWitnessArgs, isScriptValueEquals, updateWitnessArgs } from 
 import { readFileSync } from 'fs';
 import { List } from "immutable";
 import { resolve } from 'path';
-import { generateFinalHash, generateSkeletonHash } from './tmBuild';
-import { config, configTypedMessageLockDemo } from './tmConfig';
-import { DappInfo, SighashWithAction, SigningAction, SporeAction, TypedMessage } from './tmMolecule';
+import { blockchainTransactionToAPITransaction, generateFinalHash, generateSkeletonHash } from './tmBuild';
+import { config, configTransactionCobuildLockDemo } from './tmConfig';
+import { ScriptInfo, SighashAll, Action, BuildingPacket, SporeAction, Message } from './tmMolecule';
+import { txDump } from './txDump';
 const { computeScriptHash, ckbHash } = utils;
 
 export async function fetchLocalFile(src: string) {
@@ -22,6 +23,7 @@ export interface Wallet {
   signMessage(message: HexString): Hash;
   signTransaction(txSkeleton: helpers.TransactionSkeletonType): helpers.TransactionSkeletonType;
   signAndSendTransaction(txSkeleton: helpers.TransactionSkeletonType): Promise<Hash>;
+  signAndSendBuildingPacket(buildingPacket: Uint8Array): Promise<Hash>;
 }
 
 /**
@@ -100,6 +102,7 @@ export function createSkLockWallet(privateKey: HexString): Wallet {
     signMessage,
     signTransaction,
     signAndSendTransaction,
+    signAndSendBuildingPacket: null,
   };
 }
 
@@ -116,8 +119,8 @@ export const skAccounts = {
 export function createTmLockWallet(privateKey: HexString): Wallet {
   // Generate a lock script from the private key
   const lock: Script = {
-    codeHash: configTypedMessageLockDemo.script.codeHash,
-    hashType: configTypedMessageLockDemo.script.hashType,
+    codeHash: configTransactionCobuildLockDemo.script.codeHash,
+    hashType: configTransactionCobuildLockDemo.script.hashType,
     args: hd.key.privateKeyToBlake160(privateKey),
   };
 
@@ -164,54 +167,56 @@ export function createTmLockWallet(privateKey: HexString): Wallet {
     return txSkeleton.set('witnesses', witnesses);
   }
 
-  // Sign the transaction and send it via RPC
   async function signAndSendTransaction(txSkeleton: helpers.TransactionSkeletonType): Promise<Hash> {
+    return null;
+  }
 
-    let signingAction = SigningAction.unpack(bytes.bytify(txSkeleton.signingEntries.get(0).message));
-    console.log('signingAction', JSON.stringify(signingAction, null, 4))
+  // Sign the transaction and send it via RPC
+  async function signAndSendBuildingPacket(buildingPacket: Uint8Array): Promise<Hash> {
 
-    let action = SporeAction.unpack(signingAction.message.value[0].action.data);
-    console.log('action', JSON.stringify(action, null, 4))
+    let bp = BuildingPacket.unpack(buildingPacket);
+    let tx = bp.value.payload;
 
-    let dappInfo: UnpackResult<typeof DappInfo> = {
-      type: 'DappInfoV1',
-      value: {
-        name: bytes.hexify(bytes.bytifyRawString('spore')),
-        url: bytes.hexify(bytes.bytifyRawString('https://a-simple-demo.spore.pro')),
-        scriptHash: computeScriptHash({
-          codeHash: config.scripts.Spore.script.codeHash,
-          hashType: config.scripts.Spore.script.hashType,
-          args: txSkeleton.outputs.get(0).cellOutput.type!.args,
-        }),
-        schema: bytes.hexify(new Uint8Array(await fetchLocalFile('../../schemas/spore.mol'))),
-        messageType: bytes.hexify(bytes.bytifyRawString('SporeAction')),
-      }
-    };
-    let dappInfoHash = ckbHash(DappInfo.pack(dappInfo));
-    if (dappInfoHash != signingAction.message.value[0].action.infoHash) {
-      throw 'Check infoHash failed!'
+    for (let action of bp.value.message.actions) {
+      let sporeAction = SporeAction.unpack(action.data)
+      console.log(JSON.stringify({
+        'scriptInfoHash': action.scriptInfoHash,
+        'scriptHash': action.scriptHash,
+        'data': sporeAction,
+      }, null, 4))
     }
 
-    let skeletonHash = signingAction.skeletonHash
-    let typedMessage = bytes.hexify(TypedMessage.pack(signingAction.message))
-    let messageDigest = generateFinalHash(skeletonHash, typedMessage)
-    let sighashWithActionLock = signMessage(messageDigest)
-    let sighashWithAction = SighashWithAction.pack({
-      lock: sighashWithActionLock,
-      message: signingAction.message,
+    // let scriptInfo: UnpackResult<typeof ScriptInfo> = {
+    //   name: bytes.hexify(bytes.bytifyRawString('spore')),
+    //   url: bytes.hexify(bytes.bytifyRawString('https://a-simple-demo.spore.pro')),
+    //   scriptHash: computeScriptHash({
+    //     codeHash: config.scripts.Spore.script.codeHash,
+    //     hashType: config.scripts.Spore.script.hashType,
+    //     args: txSkeleton.outputs.get(0).cellOutput.type!.args,
+    //   }),
+    //   schema: bytes.hexify(new Uint8Array(await fetchLocalFile('../../schemas/spore.mol'))),
+    //   messageType: bytes.hexify(bytes.bytifyRawString('SporeAction')),
+    // };
+    // let scriptInfoHash = ckbHash(ScriptInfo.pack(scriptInfo));
+    // if (scriptInfoHash != signingAction.message[0].scriptInfoHash) {
+    //   throw 'Check infoHash failed!'
+    // }
+
+    let skeletonHash = generateSkeletonHash(tx)
+    let messageBytes = bytes.hexify(Message.pack(bp.value.message))
+    let messageDigest = generateFinalHash(skeletonHash, messageBytes)
+    let seal = signMessage(messageDigest)
+    let sighashAll = SighashAll.pack({
+      seal: seal,
+      message: bp.value.message,
     })
-    let witness0 = '0x010000ff' + bytes.hexify(sighashWithAction).slice(2);
-    let witnesses = List<string>()
-    witnesses = witnesses.set(0, witness0)
-    txSkeleton = txSkeleton.set('witnesses', witnesses)
+    let witness0 = '0x010000ff' + bytes.hexify(sighashAll).slice(2);
+    tx.witnesses[0] = witness0
 
-    // 2. Convert TransactionSkeleton to Transaction
-    const tx = helpers.createTransactionFromSkeleton(txSkeleton);
-    console.log(JSON.stringify(tx, null, 4))
+    console.log(JSON.stringify(blockchainTransactionToAPITransaction(tx), null, 4))
 
-    // 3. Send transaction
     const rpc = new RPC(config.ckbNodeUrl);
-    return await rpc.sendTransaction(tx, 'passthrough');
+    return await rpc.sendTransaction(blockchainTransactionToAPITransaction(tx), 'passthrough');
   }
 
   return {
@@ -220,6 +225,7 @@ export function createTmLockWallet(privateKey: HexString): Wallet {
     signMessage,
     signTransaction,
     signAndSendTransaction,
+    signAndSendBuildingPacket,
   };
 }
 

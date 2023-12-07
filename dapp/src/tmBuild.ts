@@ -6,15 +6,16 @@ import {
     WitnessArgs,
     blockchain,
     utils,
-    values
+    values,
 } from "@ckb-lumos/base";
-import { bytes, number } from "@ckb-lumos/codec";
+import { Transaction } from "@ckb-lumos/lumos";
+import { UnpackResult, bytes, number } from "@ckb-lumos/codec";
 import { FromInfo } from "@ckb-lumos/common-scripts";
 import {
     Options,
     TransactionSkeletonType, createTransactionFromSkeleton
 } from "@ckb-lumos/helpers";
-import { configAuth, config as configLumos, configTypedMessageLockDemo } from './tmConfig';
+import { configAuth, config as configLumos, configTransactionCobuildLockDemo } from './tmConfig';
 const { ScriptValue } = values;
 const { ckbHash } = utils;
 const { Uint32, Uint64 } = number;
@@ -116,8 +117,8 @@ export async function setupInputCell(
         depType: configAuth.cellDep.depType,
     });
     txSkeleton = addCellDep(txSkeleton, {
-        outPoint: configTypedMessageLockDemo.cellDep.outPoint,
-        depType: configTypedMessageLockDemo.cellDep.depType,
+        outPoint: configTransactionCobuildLockDemo.cellDep.outPoint,
+        depType: configTransactionCobuildLockDemo.cellDep.depType,
     });
 
     // add witness
@@ -174,23 +175,52 @@ export async function setupInputCell(
     return txSkeleton;
 }
 
-export function generateSkeletonHash(txSkeleton: TransactionSkeletonType): HexString {
+// export function generateSkeletonHash(txSkeleton: TransactionSkeletonType): HexString {
+//     let data = ''
+
+//     const tx = createTransactionFromSkeleton(txSkeleton);
+//     const txHash = ckbHash(blockchain.RawTransaction.pack(tx));
+//     console.log('generateSkeletonHash: txHash =', txHash)
+//     data += txHash
+
+//     for (let i = txSkeleton.inputs.size; i < txSkeleton.witnesses.size; i++) {
+//         const witness = txSkeleton.witnesses.get(i)
+//         console.log('generateSkeletonHash: hashWitness =', witness)
+//         data += bytes.hexify(Uint32.pack(witness.length / 2 - 1)).slice(2)
+//         data += witness.slice(2)
+//     }
+//     return ckbHash(data)
+// }
+
+export function blockchainTransactionToAPITransaction(tx: UnpackResult<typeof blockchain.Transaction>): Transaction {
+    let r = JSON.parse(JSON.stringify(tx));
+    for (let i = 0; i < tx.cellDeps.length; i++) {
+        r["cellDeps"][i]["outPoint"]["index"] = "0x" + tx["cellDeps"][i]["outPoint"]["index"].toString(16)
+    }
+    for (let i = 0; i < tx.inputs.length; i++) {
+        r["inputs"][i]["previousOutput"]["index"] = "0x" + tx["inputs"][i]["previousOutput"]["index"].toString(16)
+        r["inputs"][i]["since"] = tx["inputs"][i]["since"].toHexString()
+    }
+    for (let i = 0; i < tx.outputs.length; i++) {
+        r["outputs"][i]["capacity"] = tx["outputs"][i]["capacity"].toHexString()
+    }
+    r["version"] = "0x" + tx["version"].toString(16)
+    return r
+}
+
+export function generateSkeletonHash(tx: UnpackResult<typeof blockchain.Transaction>): HexString {
     let data = ''
 
-    const tx = createTransactionFromSkeleton(txSkeleton);
     const txHash = ckbHash(blockchain.RawTransaction.pack(tx));
-    console.log('generateSkeletonHash: txHash =', txHash)
     data += txHash
 
-    for (let i = txSkeleton.inputs.size; i < txSkeleton.witnesses.size; i++) {
-        const witness = txSkeleton.witnesses.get(i)
-        console.log('generateSkeletonHash: hashWitness =', witness)
+    for (let i = tx.inputs.length; i < tx.witnesses.length; i++) {
+        const witness = tx.witnesses[i]
         data += bytes.hexify(Uint32.pack(witness.length / 2 - 1)).slice(2)
         data += witness.slice(2)
     }
     return ckbHash(data)
 }
-
 
 export function generateFinalHash(skeletonHash: HexString, typedMessage: HexString): HexString {
     let data = ''

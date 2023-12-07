@@ -17,33 +17,22 @@ export const Address = union(
 export const AddressOpt = option(Address);
 
 export const Action = table(
-    { infoHash: blockchain.Byte32, data: blockchain.Bytes },
-    ["infoHash", "data"]
+    {
+        scriptInfoHash: blockchain.Byte32,
+        scriptHash: blockchain.Byte32,
+        data: blockchain.Bytes
+    },
+    ["scriptInfoHash", "scriptHash", "data"]
 );
 
-export const ScriptAction = table(
-    { scriptHash: blockchain.Byte32, action: Action },
-    ["scriptHash", "action"],
+export const ActionVec = vector(Action);
+
+export const Message = table(
+    { actions: ActionVec },
+    ["actions"]
 )
 
-export const TypedMessageV1 = vector(ScriptAction);
-
-export const TypedMessage = union(
-    { TypedMessageV1 },
-    ["TypedMessageV1"]
-)
-
-export const SighashWithAction = table(
-    { lock: blockchain.Bytes, message: TypedMessage },
-    ["lock", "message"]
-)
-
-export const Sighash = table(
-    { lock: blockchain.Bytes },
-    ["lock"]
-)
-
-export const DappInfoV1 = table(
+export const ScriptInfo = table(
     {
         name: String,
         url: String,
@@ -54,30 +43,31 @@ export const DappInfoV1 = table(
     ["name", "url", "scriptHash", "schema", "messageType"]
 )
 
-export const DappInfo = union(
-    { DappInfoV1 },
-    ["DappInfoV1"]
-)
+export const ScriptInfoVec = vector(ScriptInfo);
 
-export const DappInfos = vector(DappInfo);
-
-export const Scratch = union(
-    { ScriptAction },
-    ["ScriptAction"]
-)
-
-export const ScratchOpt = option(Scratch);
-
-export const SigningAction = table(
+export const BuildingPacketV1 = table(
     {
-        flags: Uint64,
-        address: Address,
-        message: TypedMessage,
-        skeletonHash: blockchain.Byte32,
-        infos: DappInfos,
-        scratch: ScratchOpt,
+        message: Message,
+        payload: blockchain.Transaction,
+        scriptInfos: ScriptInfoVec,
+        lockActions: ActionVec,
     },
-    ["flags", "address", "message", "skeletonHash", "infos", "scratch"]
+    ["message", "payload", "scriptInfos", "lockActions"]
+)
+
+export const BuildingPacket = union(
+    { BuildingPacketV1 },
+    ["BuildingPacketV1"]
+)
+
+export const SighashAll = table(
+    { seal: blockchain.Bytes, message: Message },
+    ["seal", "message"]
+)
+
+export const SighashOnly = table(
+    { seal: blockchain.Bytes },
+    ["seal"]
 )
 
 export const OtxStart = table(
@@ -97,7 +87,7 @@ export const Otx = table(
         outputCells: Uint32,
         cellDeps: Uint32,
         headerDeps: Uint32,
-        message: TypedMessage,
+        message: Message,
     },
     ["lock", "inputCells", "outputCells", "cellDeps", "headerDeps", "message"]
 )
