@@ -11,6 +11,10 @@ Build contracts:
 capsule build --release
 ```
 
+## Migration to TCoB
+See [migration](./docs/migration.md)
+
+
 ## Integration with Dapp and Wallet
 See [dapp](./dapp/README.md), using Lumos and Spore SDK.
 
