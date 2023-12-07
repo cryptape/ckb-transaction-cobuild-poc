@@ -34,7 +34,7 @@ async function main() {
 
     let { txSkeleton } = await transferSpore({
         outPoint: {
-            txHash: '0xdf3bdc04ca7bf89b5bc146d01318b6405170c776e91282b181d42cb3fd746022',
+            txHash: '0xab2a0f4073278bfdbf5e8b2ab2f7a984f5360452c7ec81b7c28ecc5758f43ec4',
             index: '0x0',
         },
         toLock: tmAccounts.bob.lock,
