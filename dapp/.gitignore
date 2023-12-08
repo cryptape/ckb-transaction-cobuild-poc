@@ -20,3 +20,6 @@ yarn-error.log*
 
 src/info.json
 src/migrations
+
+/.parcel-cache
+/dist
