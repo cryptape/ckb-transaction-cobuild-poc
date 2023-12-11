@@ -160,7 +160,7 @@ export async function createBuildingPacket(to: Script, outPoint: OutPoint) {
     return buildingPacket
 }
 
-export async function giveMessage(buildingPacket: Uint8Array) {
+export function giveMessage(buildingPacket: Uint8Array) {
   let bp = BuildingPacket.unpack(buildingPacket);
   let tx = bp.value.payload;
 
@@ -172,15 +172,15 @@ export async function giveMessage(buildingPacket: Uint8Array) {
       throw `cannot found script hash ${action.scriptHash} in building packet script infos.`
     }
     alertMessage += `Dapp name: ${Buffer.from(bytes.bytify(r[0].name).buffer).toString()}`
-    alertMessage += "\n"
+    alertMessage += "\r\n"
     alertMessage += `Dapp url: ${Buffer.from(bytes.bytify(r[0].url).buffer).toString()}`
-    alertMessage += "\n"
+    alertMessage += "\r\n"
     let sporeAction = SporeAction.unpack(action.data)
     alertMessage += `Dapp action: ${JSON.stringify(sporeAction, null, 4)}`
-    alertMessage += "\n"
+    alertMessage += "\r\n"
   }
   alertMessage += 'Sign and send the message? [Y]es, [N]o'
-  alertMessage += "\n"
+  alertMessage += "\r\n"
   return alertMessage
 }
 
@@ -206,7 +206,7 @@ export async function transfer(from: Wallet, to: Script, outPoint: OutPoint) {
   }
   alertMessage += 'Sign and send the message? [Y]es, [N]o'
   alertMessage += "\n"
-  alert(alertMessage)
+  // alert(alertMessage)
 
   let skeletonHash = generateSkeletonHash(tx)
   let messageBytes = bytes.hexify(Message.pack(bp.value.message))

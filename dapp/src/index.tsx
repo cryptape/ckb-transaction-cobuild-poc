@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom";
-import { Script } from "@ckb-lumos/lumos";
-import { tmAccounts } from "./tmWallet";
+import { Script, OutPoint } from "@ckb-lumos/lumos";
+import { tmAccounts, Wallet } from "./tmWallet";
 import { capacityOf, generateAccountFromPrivateKey, querySporeCells, transfer, createBuildingPacket, giveMessage } from "./lib";
 
 const app = document.getElementById("root");
@@ -11,8 +11,10 @@ export function App() {
 
   const [echoMessage, setEchoMessage] = useState("");
   const [buildingPacket, setBuildingPacket] = useState(new Uint8Array());
+  const [walletFrom, setWalletFrom] = useState<Wallet>(null);
   const [aliceSporeList, setAliceSporeList] = useState([]);
   const [bobSporeList, setBobSporeList] = useState([]);
+  const [showButton, setShowButton] = useState(false);
 
   const [count, setCount] = useState(0);
 
@@ -49,21 +51,44 @@ export function App() {
     <li key={spore.sporeID}>
       <p>Spore ID: {spore.sporeID}</p>
       <img src={spore.b64Data} width="64" height="64"></img>
-      <button onClick={() => { transfer(tmAccounts.alice, tmAccounts.bob.lock, spore.outPoint) }}>Transfer to Bob</button>
+      <button onClick={ () => { onTransfer(tmAccounts.alice, tmAccounts.bob.lock, spore.outPoint) } }>Transfer to Bob</button>
     </li>
   );
   const bobSpores = bobSporeList.map(spore =>
     <li key={spore.sporeID}>
       <p>Spore ID: {spore.sporeID}</p>
       <img src={spore.b64Data} width="64" height="64"></img>
-      <button onClick={() => { transfer(tmAccounts.bob, tmAccounts.alice.lock, spore.outPoint) }}>Transfer to Alice</button>
+      <button onClick={ () => { onTransfer(tmAccounts.bob, tmAccounts.alice.lock, spore.outPoint) } }>Transfer to Alice</button>
     </li>
   );
+
+  async function onTransfer(from: Wallet, to: Script, outPoint: OutPoint) {
+    setWalletFrom(from)
+    let bp = await createBuildingPacket(to, outPoint);
+    let alertMessage = giveMessage(bp);
+    setEchoMessage(alertMessage);
+    setBuildingPacket(bp);
+    setShowButton(true);
+  }
+
+  async function onConfirm() {
+    console.log(walletFrom)
+    let hash = await walletFrom.signAndSendBuildingPacket(buildingPacket)
+    setEchoMessage(`tx_hash: ${hash}`)
+    setShowButton(false)
+  }
+
+  async function onCancel() {
+    setEchoMessage("")
+    setShowButton(false)
+  }
 
   return (
     <div>
       <h2 style={{color: "#D1BA74"}}>Spore Transaction Cobuild Demo</h2>
-      <p>{ echoMessage }</p>
+      <code style={{whiteSpace: 'pre-wrap'}}>{ echoMessage }</code>
+      <button style={{ display: showButton ? "block" : "none" }} onClick={() => { onConfirm() }}>确认</button>
+      <button style={{ display: showButton ? "block" : "none" }} onClick={() => { onCancel() }}>取消</button>
       <p style={{color: "#19CAAD"}}>Alice: {tmAccounts.alice.address}</p>
       <ul style={{color: "#19CAAD"}}>{aliceSpores}</ul>
       <p style={{color: "#F4606C"}}>Bob: {tmAccounts.bob.address}</p>

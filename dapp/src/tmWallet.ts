@@ -199,11 +199,11 @@ export function createTmLockWallet(privateKey: HexString): Wallet {
       console.log(`Dapp action: ${JSON.stringify(sporeAction, null, 4)}`)
     }
 
-    console.log('Sign and send the message? [Y]es, [N]o')
-    let userInput = (await readline()).toUpperCase()[0]
-    if (userInput == 'N') {
-      throw `User refuses to sign transaction`
-    }
+    // console.log('Sign and send the message? [Y]es, [N]o')
+    // let userInput = (await readline()).toUpperCase()[0]
+    // if (userInput == 'N') {
+    //   throw `User refuses to sign transaction`
+    // }
 
     let skeletonHash = generateSkeletonHash(tx)
     let messageBytes = bytes.hexify(Message.pack(bp.value.message))
