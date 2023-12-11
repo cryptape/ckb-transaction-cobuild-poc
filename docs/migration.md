@@ -13,13 +13,16 @@ let (message_digest, seal) = parse_message()?;
 After making this change, the parsed values will be used in the signature
 validation process.
 
-In the previous implementation of the lock script, the message_digest and lock
+In the previous implementation of the lock script, the message_digest and seal
 values were calculated or parsed from the transaction hash and witness. You can
 refer to the [system
 script](https://github.com/nervosnetwork/ckb-system-scripts/blob/master/c/secp256k1_blake160_sighash_all.c)
 for more details on how these values were derived.
 
-With the added support for messages, the message digest is calculated using the following components:
+With the added support for messages, the message digest(same as
+[message](https://github.com/nervosnetwork/ckb-system-scripts/blob/a7b7c75662ed950c9bd024e15f83ce702a54996e/c/secp256k1_blake160_sighash_all.c#L151)
+in secp256k1_blake160_sighash_all.c) is calculated using the following
+components:
 - skeleton hash
 - message
 
@@ -30,14 +33,14 @@ The [skeleton hash](../ckb-transaction-cobuild/src/lib.rs) is calculated using t
 The final message digest can make the following parts not malleable:
 - transaction
 - witnesses used by all type scripts
-- extract witnesses with index beyond input cell length
+- witnesses with index beyond input cell length
 
 The `seal` value is actually the same as before, it is located in
 [SighashAll](../schemas/basic.mol).
 
-There is only one `SighashAll` variant in witness in whole transaction. If
-there are some other locks with message, they should use `SighashAllOnly` variant.
-As designed, the `SighashAllOnly` variant doesn't include message part.
+There is only one `SighashAll` variant in witness in whole transaction. If there
+are some other lock scripts, they should use `SighashAllOnly`
+variant or `WitnessArgs`. As designed, the `SighashAllOnly` variant doesn't include message part.
 
 ## Dapp Changes
 
@@ -63,7 +66,7 @@ displayed on the wallet. From the perspective of the lock script, the message is
 treated as a black box.
 
 The DApp will receive a signature if the wallet users approve and sign it. After
-that, the DApp can fill the signature in the lock field in SighashAll and
+that, the DApp can fill the signature in the seal field in SighashAll and
 broadcast the transaction to the CKB p2p network.
 
 ## Wallet Changes
