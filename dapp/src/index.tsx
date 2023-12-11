@@ -14,6 +14,8 @@ export function App() {
   const [aliceSporeList, setAliceSporeList] = useState([]);
   const [bobSporeList, setBobSporeList] = useState([]);
 
+  const [count, setCount] = useState(0);
+
   useEffect(() => {
 
     async function fetchAliceSporeList() {
@@ -24,6 +26,7 @@ export function App() {
         console.log(error)
       }
     }
+
     async function fetchBobSporeList() {
       try {
         const data = await querySporeCells(tmAccounts.bob.lock);
@@ -33,8 +36,11 @@ export function App() {
       }
     }
 
-    fetchAliceSporeList();
-    fetchBobSporeList();
+    const timer = setInterval(() => {
+      fetchAliceSporeList();
+      fetchBobSporeList();
+    }, 1000);
+    return () => clearInterval(timer);
 
   }, []);
 
