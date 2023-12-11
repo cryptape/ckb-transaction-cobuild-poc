@@ -12,7 +12,8 @@
     "tmDebug": "ckb-debugger --tx-file src/tmTxDump.json -s lock",
     "tmTransferSpore": "ts-node src/tmTransferSpore.ts",
     "tmQuery": "ts-node src/tmQuery.ts",
-    "web": "parcel --host 0.0.0.0 --port 8080 src/index.html"
+    "web": "parcel --host 0.0.0.0 --port 8080 src/index.html",
+    "lib": "ts-node src/lib.ts"
   },
   "dependencies": {
     "@ckb-lumos/lumos": "^0.21.0-next.0",
@@ -23,13 +24,13 @@
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
-    "ts-node": "^10.9.0",
-    "typescript": "^5.1.6",
     "crypto-browserify": "^3.12.0",
     "parcel": "^2.9.3",
     "path-browserify": "^1.0.1",
     "process": "^0.11.10",
-    "stream-browserify": "^3.0.0"
+    "stream-browserify": "^3.0.0",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.1.6"
   },
   "engines": {
     "node": ">=18.0.0"

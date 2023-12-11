@@ -1,73 +1,67 @@
 import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom";
 import { Script } from "@ckb-lumos/lumos";
-import { capacityOf, generateAccountFromPrivateKey, transfer } from "./lib";
+import { tmAccounts } from "./tmWallet";
+import { capacityOf, generateAccountFromPrivateKey, querySporeCells, transfer, createBuildingPacket, giveMessage } from "./lib";
 
 const app = document.getElementById("root");
 ReactDOM.render(<App />, app);
 
 export function App() {
-  const [privKey, setPrivKey] = useState("");
-  const [fromAddr, setFromAddr] = useState("");
-  const [fromLock, setFromLock] = useState<Script>();
-  const [balance, setBalance] = useState("0");
 
-  const [toAddr, setToAddr] = useState("");
-  const [amount, setAmount] = useState("");
+  const [echoMessage, setEchoMessage] = useState("");
+  const [buildingPacket, setBuildingPacket] = useState(new Uint8Array());
+  const [aliceSporeList, setAliceSporeList] = useState([]);
+  const [bobSporeList, setBobSporeList] = useState([]);
 
   useEffect(() => {
-    const updateFromInfo = async () => {
-      const { lockScript, address } = generateAccountFromPrivateKey(privKey);
-      const capacity = await capacityOf(address);
-      setFromAddr(address);
-      setFromLock(lockScript);
-      setBalance(capacity.toString());
-    };
 
-    if (privKey) {
-      updateFromInfo();
+    async function fetchAliceSporeList() {
+      try {
+        const data = await querySporeCells(tmAccounts.alice.lock);
+        setAliceSporeList(data)
+      } catch (error) {
+        console.log(error)
+      }
     }
-  }, [privKey]);
+    async function fetchBobSporeList() {
+      try {
+        const data = await querySporeCells(tmAccounts.bob.lock);
+        setBobSporeList(data)
+      } catch (error) {
+        console.log(error)
+      }
+    }
+
+    fetchAliceSporeList();
+    fetchBobSporeList();
+
+  }, []);
+
+
+  const aliceSpores = aliceSporeList.map(spore =>
+    <li key={spore.sporeID}>
+      <p>Spore ID: {spore.sporeID}</p>
+      <img src={spore.b64Data} width="64" height="64"></img>
+      <button onClick={() => { transfer(tmAccounts.alice, tmAccounts.bob.lock, spore.outPoint) }}>Transfer to Bob</button>
+    </li>
+  );
+  const bobSpores = bobSporeList.map(spore =>
+    <li key={spore.sporeID}>
+      <p>Spore ID: {spore.sporeID}</p>
+      <img src={spore.b64Data} width="64" height="64"></img>
+      <button onClick={() => { transfer(tmAccounts.bob, tmAccounts.alice.lock, spore.outPoint) }}>Transfer to Alice</button>
+    </li>
+  );
 
   return (
     <div>
-      <label htmlFor="private-key">Private Key: </label>&nbsp;
-      <input
-        id="private-key"
-        type="text"
-        onChange={(e) => setPrivKey(e.target.value)}
-      />
-      <ul>
-        <li>CKB Address: {fromAddr}</li>
-        <li>
-          Current lock script:
-          <pre>{JSON.stringify(fromLock, null, 2)}</pre>
-        </li>
-
-        <li>Total capacity: {balance}</li>
-      </ul>
-      <label htmlFor="to-address">Transfer to Address: </label>&nbsp;
-      <input
-        id="to-address"
-        type="text"
-        onChange={(e) => setToAddr(e.target.value)}
-      />
-      <br />
-      <label htmlFor="amount">Amount</label>
-      &nbsp;
-      <input
-        id="amount"
-        type="text"
-        onChange={(e) => setAmount(e.target.value)}
-      />
-      <br />
-      <button
-        onClick={() =>
-          transfer({ amount, from: fromAddr, to: toAddr, privKey })
-        }
-      >
-        Transfer
-      </button>
+      <h2 style={{color: "#D1BA74"}}>Spore Transaction Cobuild Demo</h2>
+      <p>{ echoMessage }</p>
+      <p style={{color: "#19CAAD"}}>Alice: {tmAccounts.alice.address}</p>
+      <ul style={{color: "#19CAAD"}}>{aliceSpores}</ul>
+      <p style={{color: "#F4606C"}}>Bob: {tmAccounts.bob.address}</p>
+      <ul style={{color: "#F4606C"}}>{bobSpores}</ul>
     </div>
   );
 }

@@ -1,152 +1,224 @@
 import { bytes } from "@ckb-lumos/codec";
-import { Indexer, helpers, Address, Script, RPC, hd, config, Cell, commons, WitnessArgs, BI } from "@ckb-lumos/lumos";
+import { Indexer, helpers, Address, Script, RPC, hd, config as lumosConfig, Cell, commons, WitnessArgs, BI, HexString, OutPoint } from "@ckb-lumos/lumos";
 import { values, blockchain } from "@ckb-lumos/base";
 import { option } from "@ckb-lumos/codec/lib/molecule";
-const { ScriptValue } = values;
+import { config } from "./tmConfig"
+import { tmAccounts, Wallet } from "./tmWallet"
+import { unpackToRawSporeData, RawSporeData } from '@spore-sdk/core';
 
-export const { AGGRON4 } = config.predefined;
+// There is a bug in Lomus: https://github.com/ckb-js/lumos/pull/583
+// Dirty fix it without update lumos.
+require('abort-controller').AbortController = require('abort-controller').default
 
-const CKB_RPC_URL = "https://testnet.ckb.dev/rpc";
-const rpc = new RPC(CKB_RPC_URL);
-const indexer = new Indexer(CKB_RPC_URL);
-
-type Account = {
-  lockScript: Script;
-  address: Address;
-  pubKey: string;
-};
-export const generateAccountFromPrivateKey = (privKey: string): Account => {
-  const pubKey = hd.key.privateToPublic(privKey);
-  const args = hd.key.publicKeyToBlake160(pubKey);
-  const template = AGGRON4.SCRIPTS["SECP256K1_BLAKE160"]!;
-  const lockScript = {
-    codeHash: template.CODE_HASH,
-    hashType: template.HASH_TYPE,
-    args: args,
-  };
-  const address = helpers.encodeToAddress(lockScript, { config: AGGRON4 });
-  return {
-    lockScript,
-    address,
-    pubKey,
-  };
-};
-
-export async function capacityOf(address: string): Promise<BI> {
-  const collector = indexer.collector({
-    lock: helpers.parseAddress(address, { config: AGGRON4 }),
-  });
-
-  let balance = BI.from(0);
-  for await (const cell of collector.collect()) {
-    balance = balance.add(cell.cellOutput.capacity);
-  }
-
-  return balance;
+interface SporeContainer {
+  outPoint: OutPoint,
+  sporeID: HexString,
+  spore: RawSporeData,
+  b64Data: string,
 }
 
-interface Options {
-  from: string;
-  to: string;
-  amount: string;
-  privKey: string;
-}
-
-export async function transfer(options: Options): Promise<string> {
-  console.log(options)
-  let txSkeleton = helpers.TransactionSkeleton({});
-  const fromScript = helpers.parseAddress(options.from, { config: AGGRON4 });
-  const toScript = helpers.parseAddress(options.to, { config: AGGRON4 });
-
-  // additional 0.001 ckb for tx fee
-  // the tx fee could calculated by tx size
-  // this is just a simple example
-  const neededCapacity = BI.from(options.amount).add(100000);
-  let collectedSum = BI.from(0);
-  const collected: Cell[] = [];
-  const collector = indexer.collector({ lock: fromScript, type: "empty" });
-  for await (const cell of collector.collect()) {
-    collectedSum = collectedSum.add(cell.cellOutput.capacity);
-    collected.push(cell);
-    console.log(collectedSum.toString(), neededCapacity.toString(), collectedSum >= neededCapacity)
-    if (collectedSum.gte(neededCapacity)) {
-      break
+export async function querySporeCells(lock: Script): Promise<Array<SporeContainer>> {
+  const rpc = new RPC(config.ckbNodeUrl);
+  let cells = await rpc.getCells({
+    script: lock,
+    scriptType: 'lock',
+    filter: {
+      script: {
+        codeHash: config.scripts.Spore.script.codeHash,
+        hashType: config.scripts.Spore.script.hashType,
+        args: "0x"
+      }
     }
-  }
-
-  if (collectedSum.lt(neededCapacity)) {
-    throw new Error("Not enough CKB");
-  }
-
-  const transferOutput: Cell = {
-    cellOutput: {
-      capacity: BI.from(options.amount).toHexString(),
-      lock: toScript,
-    },
-    data: "0x",
-  };
-
-  const changeOutput: Cell = {
-    cellOutput: {
-      capacity: collectedSum.sub(neededCapacity).toHexString(),
-      lock: fromScript,
-    },
-    data: "0x",
-  };
-
-  txSkeleton = txSkeleton.update("inputs", (inputs) => inputs.push(...collected));
-  txSkeleton = txSkeleton.update("outputs", (outputs) => outputs.push(transferOutput, changeOutput));
-  txSkeleton = txSkeleton.update("cellDeps", (cellDeps) =>
-    cellDeps.push({
-      outPoint: {
-        txHash: AGGRON4.SCRIPTS.SECP256K1_BLAKE160.TX_HASH,
-        index: AGGRON4.SCRIPTS.SECP256K1_BLAKE160.INDEX,
-      },
-      depType: AGGRON4.SCRIPTS.SECP256K1_BLAKE160.DEP_TYPE,
+  }, 'asc', '0x100', null); // Only query max 256 spores in this demo.
+  let myout = []
+  for (let e of cells.objects) {
+    myout.push({
+      outPoint: e.outPoint,
+      sporeID: e.output.type!.args,
+      spore: unpackToRawSporeData(e.outputData),
+      b64Data: "data:image/png;base64," + Buffer.from(unpackToRawSporeData(e.outputData).content.slice(2), 'hex').toString('base64')
     })
-  );
-
-  const firstIndex = txSkeleton
-    .get("inputs")
-    .findIndex((input) =>
-      new ScriptValue(input.cellOutput.lock, { validate: false }).equals(
-        new ScriptValue(fromScript, { validate: false })
-      )
-    );
-  if (firstIndex !== -1) {
-    while (firstIndex >= txSkeleton.get("witnesses").size) {
-      txSkeleton = txSkeleton.update("witnesses", (witnesses) => witnesses.push("0x"));
-    }
-    let witness: string = txSkeleton.get("witnesses").get(firstIndex)!;
-    const newWitnessArgs: WitnessArgs = {
-      /* 65-byte zeros in hex */
-      lock: "0x0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-    };
-    if (witness !== "0x") {
-      const witnessArgs = blockchain.WitnessArgs.unpack(bytes.bytify(witness));
-      const lock = witnessArgs.lock;
-      if (!!lock && !!newWitnessArgs.lock && !bytes.equal(lock, newWitnessArgs.lock)) {
-        throw new Error("Lock field in first witness is set aside for signature!");
-      }
-      const inputType = witnessArgs.inputType;
-      if (!!inputType) {
-        newWitnessArgs.inputType = inputType;
-      }
-      const outputType = witnessArgs.outputType;
-      if (!!outputType) {
-        newWitnessArgs.outputType = outputType;
-      }
-    }
-    witness = bytes.hexify(blockchain.WitnessArgs.pack(newWitnessArgs));
-    txSkeleton = txSkeleton.update("witnesses", (witnesses) => witnesses.set(firstIndex, witness));
   }
+  return myout
+}
 
-  txSkeleton = commons.common.prepareSigningEntries(txSkeleton);
-  const message = txSkeleton.get("signingEntries").get(0)?.message;
-  const Sig = hd.key.signRecoverable(message!, options.privKey);
-  const tx = helpers.sealTransaction(txSkeleton, [Sig]);
-  const hash = await rpc.sendTransaction(tx, "passthrough");
-  console.log("The transaction hash is", hash);
+import { utils } from '@ckb-lumos/base';
+import { UnpackResult } from "@ckb-lumos/codec";
+import { common } from '@ckb-lumos/common-scripts';
+import { transferSpore } from '@spore-sdk/core';
+import { createTransactionFromSkeleton } from "@ckb-lumos/helpers";
+import { readFileSync } from 'fs';
+import { resolve } from 'path';
+import { generateSkeletonHash, setupInputCell } from './tmBuild';
+import { configTransactionCobuildLockDemo } from './tmConfig';
+import { Action, ActionVec, ScriptInfo, Message, SighashAll, SporeAction, BuildingPacket } from './tmMolecule';
+const { ckbHash, computeScriptHash } = utils;
+const { registerCustomLockScriptInfos } = common;
+import { blockchainTransactionToAPITransaction, generateFinalHash } from './tmBuild';
 
-  return hash;
+const schema = `import blockchain;
+import basic;
+
+union Address {
+    Script,
+}
+
+option AddressOpt (Address);
+
+table Mint {
+    id: Byte32,
+    to: Address,
+    content_hash: Byte32,
+}
+
+table Transfer {
+    nft_id: Byte32,
+    from: AddressOpt,
+    to: AddressOpt,
+}
+
+table Melt {
+    id: Byte32,
+}
+
+union SporeAction {
+    Mint,
+    Transfer,
+    Melt,
+}
+`
+
+export async function createBuildingPacket(to: Script, outPoint: OutPoint) {
+    registerCustomLockScriptInfos([
+        {
+            codeHash: configTransactionCobuildLockDemo.script.codeHash,
+            hashType: configTransactionCobuildLockDemo.script.hashType,
+            lockScriptInfo: {
+                CellCollector: null,
+                setupInputCell: setupInputCell,
+                prepareSigningEntries: null,
+                setupOutputCell: null,
+            },
+        },
+    ])
+
+    let { txSkeleton } = await transferSpore({
+        outPoint: outPoint,
+        toLock: to,
+        config: config,
+    });
+
+    let scriptInfo: UnpackResult<typeof ScriptInfo> = {
+        name: bytes.hexify(bytes.bytifyRawString('spore')),
+        url: bytes.hexify(bytes.bytifyRawString('https://a-simple-demo.spore.pro')),
+        scriptHash: computeScriptHash({
+            codeHash: config.scripts.Spore.script.codeHash,
+            hashType: config.scripts.Spore.script.hashType,
+            args: txSkeleton.outputs.get(0).cellOutput.type!.args,
+        }),
+        schema: bytes.hexify(bytes.bytifyRawString(schema)),
+        messageType: bytes.hexify(bytes.bytifyRawString('SporeAction')),
+    };
+    let scriptInfoHash = ckbHash(ScriptInfo.pack(scriptInfo));
+    let sporeID = txSkeleton.outputs.get(0).cellOutput.type!.args;
+    let sporeTransferTo = txSkeleton.outputs.get(0).cellOutput.lock;
+    let actionData = bytes.hexify(SporeAction.pack({
+        type: 'Transfer',
+        value: {
+            nftID: sporeID,
+            to: {
+                type: 'Script',
+                value: sporeTransferTo
+            },
+        },
+    }))
+    let action: UnpackResult<typeof Action> = {
+        scriptInfoHash: scriptInfoHash,
+        scriptHash: scriptInfo.scriptHash,
+        data: actionData,
+    };
+    let message: UnpackResult<typeof Message> = {
+        actions: [action],
+    };
+    let sighashAll = SighashAll.pack({
+        seal: '0x' + '0'.repeat(130),
+        message: message,
+    })
+    let witness0 = '0x010000ff' + bytes.hexify(sighashAll).slice(2);
+    let extraFee = (witness0.length - 2) / 2 - 85
+    txSkeleton.outputs.get(0).cellOutput.capacity = '0x' + (parseInt(txSkeleton.outputs.get(0).cellOutput.capacity, 16) - extraFee).toString(16)
+
+    let buildingPacket = BuildingPacket.pack({
+        type: 'BuildingPacketV1',
+        value: {
+            message: message,
+            payload: createTransactionFromSkeleton(txSkeleton),
+            scriptInfos: [scriptInfo],
+            lockActions: [],
+        }
+    })
+    return buildingPacket
+}
+
+export async function giveMessage(buildingPacket: Uint8Array) {
+  let bp = BuildingPacket.unpack(buildingPacket);
+  let tx = bp.value.payload;
+
+  let alertMessage = ""
+
+  for (let action of bp.value.message.actions) {
+    let r = bp.value.scriptInfos.filter((x) => x.scriptHash == action.scriptHash!)
+    if (r.length != 1) {
+      throw `cannot found script hash ${action.scriptHash} in building packet script infos.`
+    }
+    alertMessage += `Dapp name: ${Buffer.from(bytes.bytify(r[0].name).buffer).toString()}`
+    alertMessage += "\n"
+    alertMessage += `Dapp url: ${Buffer.from(bytes.bytify(r[0].url).buffer).toString()}`
+    alertMessage += "\n"
+    let sporeAction = SporeAction.unpack(action.data)
+    alertMessage += `Dapp action: ${JSON.stringify(sporeAction, null, 4)}`
+    alertMessage += "\n"
+  }
+  alertMessage += 'Sign and send the message? [Y]es, [N]o'
+  alertMessage += "\n"
+  return alertMessage
+}
+
+export async function transfer(from: Wallet, to: Script, outPoint: OutPoint) {
+  let buildingPacket = await createBuildingPacket(to, outPoint);
+  let bp = BuildingPacket.unpack(buildingPacket);
+  let tx = bp.value.payload;
+
+  let alertMessage = ""
+
+  for (let action of bp.value.message.actions) {
+    let r = bp.value.scriptInfos.filter((x) => x.scriptHash == action.scriptHash!)
+    if (r.length != 1) {
+      throw `cannot found script hash ${action.scriptHash} in building packet script infos.`
+    }
+    alertMessage += `Dapp name: ${Buffer.from(bytes.bytify(r[0].name).buffer).toString()}`
+    alertMessage += "\n"
+    alertMessage += `Dapp url: ${Buffer.from(bytes.bytify(r[0].url).buffer).toString()}`
+    alertMessage += "\n"
+    let sporeAction = SporeAction.unpack(action.data)
+    alertMessage += `Dapp action: ${JSON.stringify(sporeAction, null, 4)}`
+    alertMessage += "\n"
+  }
+  alertMessage += 'Sign and send the message? [Y]es, [N]o'
+  alertMessage += "\n"
+  alert(alertMessage)
+
+  let skeletonHash = generateSkeletonHash(tx)
+  let messageBytes = bytes.hexify(Message.pack(bp.value.message))
+  let messageDigest = generateFinalHash(skeletonHash, messageBytes)
+  let seal = from.signMessage(messageDigest)
+  let sighashAll = SighashAll.pack({
+    seal: seal,
+    message: bp.value.message,
+  })
+  let witness0 = '0x010000ff' + bytes.hexify(sighashAll).slice(2);
+  tx.witnesses[0] = witness0
+
+  const rpc = new RPC(config.ckbNodeUrl);
+  return await rpc.sendTransaction(blockchainTransactionToAPITransaction(tx), 'passthrough');
 }
