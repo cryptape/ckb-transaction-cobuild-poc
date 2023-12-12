@@ -222,3 +222,9 @@ export async function transfer(from: Wallet, to: Script, outPoint: OutPoint) {
   const rpc = new RPC(config.ckbNodeUrl);
   return await rpc.sendTransaction(blockchainTransactionToAPITransaction(tx), 'passthrough');
 }
+
+export async function getTxStatus(hash: string): Promise<string> {
+  const rpc = new RPC(config.ckbNodeUrl);
+  let r = await rpc.getTransaction(hash);
+  return r.txStatus.status
+}
