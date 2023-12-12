@@ -42,7 +42,7 @@ export function App() {
     async function updateTxStatus() {
       if (txHash != "") {
         let status = await getTxStatus(txHash)
-        setEchoMessage(txHash + ": " + status)
+        setEchoMessage("txHash: " + txHash + ": " + status)
         if (status === "committed") {
           setTxHash("")
         }
@@ -98,7 +98,7 @@ export function App() {
   return (
     <div>
       <h2 style={{ color: "#D1BA74" }}>Spore Transaction Cobuild Demo</h2>
-      <code style={{ whiteSpace: 'pre-wrap' }}>{echoMessage}</code>
+      <p style={{ whiteSpace: 'pre-wrap', color: "#D1BA74" }}>{echoMessage}</p>
       <button style={{ display: showButton ? "block" : "none" }} onClick={() => { onConfirm() }}>签名发送</button>
       <button style={{ display: showButton ? "block" : "none" }} onClick={() => { onCancel() }}>取消</button>
       <p style={{ color: "#19CAAD" }}>Alice: {tmAccounts.alice.address}</p>
