@@ -11,6 +11,11 @@ $ npm run tmTransferSpore
 The message will be printed out before signing. In a real-life project, a
 popup window should be displayed to users to show these messages.
 
+You can also use the WebUI to view the Spores you own and transfer it by
+
+```shell
+$ npm run web
+```
 
 ## Create and transfer Spore on testnet
 
