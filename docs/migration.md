@@ -8,7 +8,13 @@ The changes to the lock script are relatively simple. A TL;DR version is to only
 line of code to existing project(See
 [example](../contracts/transaction-cobuild-lock-demo/src/entry.rs)):
 ```Rust
-let (message_digest, seal) = parse_message()?;
+if let Ok((message_digest, seal)) = parse_message() {
+    // new code here
+} else {
+    // In this routine, it indicates that the WitnessLayout is not being
+    // used. It is possible that the traditional WitnessArgs is being used.
+    // The previous code can be copied and pasted here.
+}
 ```
 After making this change, the parsed values will be used in the signature
 validation process.
