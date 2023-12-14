@@ -17,25 +17,30 @@ const AUTH_CODE_HASH: [u8; 32] = [
 ];
 
 pub fn main() -> Result<(), Error> {
-    let (message_digest, seal) = parse_message()?;
+    if let Ok((message_digest, seal)) = parse_message() {
+        let mut pubkey_hash = [0u8; 20];
+        let script = load_script()?;
+        let args: Bytes = script.args().unpack();
+        pubkey_hash.copy_from_slice(&args[0..20]);
 
-    let mut pubkey_hash = [0u8; 20];
-    let script = load_script()?;
-    let args: Bytes = script.args().unpack();
-    pubkey_hash.copy_from_slice(&args[0..20]);
+        let id = CkbAuthType {
+            algorithm_id: AuthAlgorithmIdType::Ckb,
+            pubkey_hash,
+        };
 
-    let id = CkbAuthType {
-        algorithm_id: AuthAlgorithmIdType::Ckb,
-        pubkey_hash,
-    };
+        let entry = CkbEntryType {
+            code_hash: AUTH_CODE_HASH,
+            hash_type: ScriptHashType::Data1,
+            entry_category: EntryCategoryType::DynamicLinking,
+        };
 
-    let entry = CkbEntryType {
-        code_hash: AUTH_CODE_HASH,
-        hash_type: ScriptHashType::Data1,
-        entry_category: EntryCategoryType::DynamicLinking,
-    };
+        ckb_auth(&entry, &id, &seal, &message_digest).map_err(|_| Error::AuthError)?;
 
-    ckb_auth(&entry, &id, &seal, &message_digest).map_err(|_| Error::AuthError)?;
-
-    Ok(())
+        Ok(())
+    } else {
+        // In this routine, it indicates that the WitnessLayout is not being
+        // used. It is possible that the traditional WitnessArgs is being used.
+        // The previous code can be copied and pasted here.
+        Ok(())
+    }
 }
