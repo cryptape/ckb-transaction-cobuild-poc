@@ -132,11 +132,11 @@ pub fn generate_skeleton_hash() -> Result<[u8; 32], Error> {
     Ok(output)
 }
 
-pub fn generate_message_digest(skeleton_hash: &[u8; 32], message: &[u8]) -> [u8; 32] {
+pub fn generate_message_digest(message: &[u8], skeleton_hash: &[u8; 32]) -> [u8; 32] {
     let mut hasher = new_blake2b();
-    hasher.update(&skeleton_hash[..]);
     hasher.update(&(message.len() as u64).to_le_bytes());
     hasher.update(message);
+    hasher.update(&skeleton_hash[..]);
     let mut output = [0u8; 32];
     hasher.finalize(&mut output);
     return output;
@@ -181,6 +181,6 @@ pub fn parse_message() -> Result<([u8; 32], Vec<u8>), Error> {
         }
     };
     let skeleton_hash = generate_skeleton_hash()?;
-    let message_digest = generate_message_digest(&skeleton_hash, message.as_slice());
+    let message_digest = generate_message_digest(message.as_slice(), &skeleton_hash);
     Ok((message_digest, lock.raw_data().into()))
 }

@@ -315,9 +315,9 @@ pub fn sign_tx(witnesses: &mut MessageWitnesses, tx: TransactionView) -> Transac
         }
 
         let mut hasher = new_blake2b();
-        hasher.update(&skeleton_hash);
         hasher.update(&msg.len().to_le_bytes());
         hasher.update(&msg);
+        hasher.update(&skeleton_hash);
 
         let mut message_digest = [0u8; 32];
         hasher.finalize(&mut message_digest);
