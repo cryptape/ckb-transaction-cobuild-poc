@@ -207,7 +207,7 @@ export function createTmLockWallet(privateKey: HexString): Wallet {
 
     let skeletonHash = generateSkeletonHash(tx)
     let messageBytes = bytes.hexify(Message.pack(bp.value.message))
-    let messageDigest = generateFinalHash(skeletonHash, messageBytes)
+    let messageDigest = generateFinalHash(messageBytes, skeletonHash)
     let seal = signMessage(messageDigest)
     let sighashAll = SighashAll.pack({
       seal: seal,
