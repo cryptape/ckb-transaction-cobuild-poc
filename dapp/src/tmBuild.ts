@@ -222,10 +222,10 @@ export function generateSkeletonHash(tx: UnpackResult<typeof blockchain.Transact
     return ckbHash(data)
 }
 
-export function generateFinalHash(skeletonHash: HexString, typedMessage: HexString): HexString {
+export function generateFinalHash(typedMessage: HexString, skeletonHash: HexString): HexString {
     let data = ''
-    data += skeletonHash
     data += bytes.hexify(Uint64.pack(typedMessage.length / 2 - 1)).slice(2)
     data += typedMessage.slice(2)
+    data += skeletonHash
     return ckbHash(data)
 }
