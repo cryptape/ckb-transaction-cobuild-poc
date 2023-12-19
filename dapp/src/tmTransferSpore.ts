@@ -1,14 +1,13 @@
-import { blockchain, utils } from '@ckb-lumos/base';
+import { utils } from '@ckb-lumos/base';
 import { UnpackResult, bytes } from "@ckb-lumos/codec";
 import { common } from '@ckb-lumos/common-scripts';
-import { BI } from '@ckb-lumos/lumos';
 import { transferSpore } from '@spore-sdk/core';
 import { createTransactionFromSkeleton } from "@ckb-lumos/helpers";
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
-import { generateSkeletonHash, setupInputCell } from './tmBuild';
+import { setupInputCell } from './tmBuild';
 import { config, configTransactionCobuildLockDemo } from './tmConfig';
-import { Action, ActionVec, ScriptInfo, Message, SighashAll, SporeAction, BuildingPacket } from './tmMolecule';
+import { Action, ScriptInfo, Message, SighashAll, SporeAction, BuildingPacket } from './tmMolecule';
 import { tmAccounts } from './tmWallet';
 const { ckbHash, computeScriptHash } = utils;
 const { registerCustomLockScriptInfos } = common;
@@ -34,7 +33,7 @@ async function main() {
 
     let { txSkeleton } = await transferSpore({
         outPoint: {
-            txHash: '0xab2a0f4073278bfdbf5e8b2ab2f7a984f5360452c7ec81b7c28ecc5758f43ec4',
+            txHash: '0x3940bc2236433541f06a50a62285cdb9c809d5d32395eb425b09111db297fb8a',
             index: '0x0',
         },
         toLock: tmAccounts.bob.lock,

@@ -198,13 +198,13 @@ export const configAuth = {
 
 export const configTransactionCobuildLockDemo = {
     script: {
-        codeHash: '0xbce10030b8dea1ada7efa45ea6fa981bb59ce61d53cd9e34815641a80667501a',
+        codeHash: '0xc234cbf22df818a946c56c31fb999120f05ac8e1cc91083e5d361338e54623bf',
         hashType: 'data1' as HashType,
     },
     cellDep: {
         outPoint: {
-            txHash: '0x501e34a53e996602b618674f0f3c56b2cf8a6834f0e360935bfd780a1fc78b97',
-            index: '0x3',
+            txHash: '0x6ca40b04feeb3c7145be86d78c6275d2b0c3902a6f3ec8d5a72c176424b21ef2',
+            index: '0x0',
         },
         depType: 'code' as DepType,
     }

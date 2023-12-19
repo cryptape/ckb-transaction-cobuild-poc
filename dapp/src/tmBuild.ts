@@ -13,7 +13,7 @@ import { UnpackResult, bytes, number } from "@ckb-lumos/codec";
 import { FromInfo } from "@ckb-lumos/common-scripts";
 import {
     Options,
-    TransactionSkeletonType, createTransactionFromSkeleton
+    TransactionSkeletonType
 } from "@ckb-lumos/helpers";
 import { configAuth, config as configLumos, configTransactionCobuildLockDemo } from './tmConfig';
 const { ScriptValue } = values;
@@ -223,9 +223,9 @@ export function generateSkeletonHash(tx: UnpackResult<typeof blockchain.Transact
 }
 
 export function generateFinalHash(typedMessage: HexString, skeletonHash: HexString): HexString {
-    let data = ''
+    let data = '0x'
     data += bytes.hexify(Uint64.pack(typedMessage.length / 2 - 1)).slice(2)
     data += typedMessage.slice(2)
-    data += skeletonHash
+    data += skeletonHash.slice(2)
     return ckbHash(data)
 }
