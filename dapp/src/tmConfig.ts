@@ -117,13 +117,13 @@ import { SporeConfig, PredefinedSporeConfigScriptName } from '@spore-sdk/core';
 
 // export const configTransactionCobuildLockDemo = {
 //     script: {
-//         codeHash: '0xbce10030b8dea1ada7efa45ea6fa981bb59ce61d53cd9e34815641a80667501a',
+//         codeHash: '0xc234cbf22df818a946c56c31fb999120f05ac8e1cc91083e5d361338e54623bf',
 //         hashType: 'data1' as HashType,
 //     },
 //     cellDep: {
 //         outPoint: {
-//             txHash: '0xd97996a6afd37f2656c94c356b33edd0bbe0cc1a817ad2215f69c7c551077301',
-//             index: '0x3',
+//             txHash: '0xc3f7470cfd908f19b785c62d1c9f2597fcc3a393b145b4b5c2008fe07ee8d03e',
+//             index: '0x0',
 //         },
 //         depType: 'code' as DepType,
 //     }
