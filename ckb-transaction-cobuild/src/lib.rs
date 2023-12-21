@@ -110,7 +110,7 @@ pub fn generate_skeleton_hash() -> Result<[u8; 32], Error> {
 
     let i = calculate_inputs_len()?;
     for witness in QueryIter::new(load_witness, Source::Input).skip(i) {
-        hasher.update(&(witness.len() as u64).to_le_bytes());
+        hasher.update(&(witness.len() as u32).to_le_bytes());
         hasher.update(&witness);
     }
 
@@ -122,7 +122,7 @@ pub fn generate_skeleton_hash() -> Result<[u8; 32], Error> {
 
 pub fn generate_message_digest(message: &[u8], skeleton_hash: &[u8; 32]) -> [u8; 32] {
     let mut hasher = new_blake2b();
-    hasher.update(&(message.len() as u64).to_le_bytes());
+    hasher.update(&(message.len() as u32).to_le_bytes());
     hasher.update(message);
     hasher.update(&skeleton_hash[..]);
     let mut output = [0u8; 32];

@@ -276,12 +276,9 @@ fn generate_skeleton_hash(tx: &TransactionView) -> [u8; 32] {
 
     hasher.update(tx.hash().as_slice());
 
-    for i in tx.inputs().len()..tx.witnesses().len() {
-        let w = tx.witnesses().get(i).unwrap();
-        let w = w.as_slice()[4..].to_vec();
-
-        hasher.update(&w.len().to_le_bytes());
-        hasher.update(&w);
+    for witness in tx.witnesses().into_iter().skip(tx.inputs().len()) {
+        hasher.update(&(witness.len() as u32).to_le_bytes());
+        hasher.update(&witness.raw_data());
     }
 
     let mut ret_hash = [0u8; 32];
@@ -315,7 +312,7 @@ pub fn sign_tx(witnesses: &mut MessageWitnesses, tx: TransactionView) -> Transac
         }
 
         let mut hasher = new_blake2b();
-        hasher.update(&msg.len().to_le_bytes());
+        hasher.update(&(msg.len() as u32).to_le_bytes());
         hasher.update(&msg);
         hasher.update(&skeleton_hash);
 
