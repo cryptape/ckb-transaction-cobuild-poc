@@ -9,7 +9,7 @@ use ckb_std::{
     ckb_constants::Source,
     ckb_types::packed::CellInput,
     error::SysError,
-    high_level::{load_tx_hash, load_witness, QueryIter},
+    high_level::{load_cell, load_cell_data, load_tx_hash, load_witness, QueryIter},
     syscalls::load_transaction,
 };
 use core::convert::Into;
@@ -99,35 +99,32 @@ pub fn check_others_in_group() -> Result<(), Error> {
     }
 }
 
-//
-// Rule for hashing:
-// 1. Variable length data should hash the length.
-// 2. Fixed length data don't need to hash the length.
-//
-pub fn generate_skeleton_hash() -> Result<[u8; 32], Error> {
+pub fn generate_signing_message_hash(message: &[u8]) -> Result<[u8; 32], Error> {
     let mut hasher = new_blake2b();
+    // message
+    hasher.update(&(message.len() as u32).to_le_bytes());
+    hasher.update(message);
+    // tx hash
     hasher.update(&load_tx_hash()?);
-
-    let i = calculate_inputs_len()?;
-    for witness in QueryIter::new(load_witness, Source::Input).skip(i) {
+    // inputs cell and data
+    let inputs_len = calculate_inputs_len()?;
+    for i in 0..inputs_len {
+        let input_cell = load_cell(i, Source::Input)?;
+        hasher.update(input_cell.as_slice());
+        // TODO cell data may be too large, use high_level::load_data fn to load and hash it in chunks
+        let input_cell_data = load_cell_data(i, Source::Input)?;
+        hasher.update(&(input_cell_data.len() as u32).to_le_bytes());
+        hasher.update(&input_cell_data);
+    }
+    // extra witnesses
+    for witness in QueryIter::new(load_witness, Source::Input).skip(inputs_len) {
         hasher.update(&(witness.len() as u32).to_le_bytes());
         hasher.update(&witness);
     }
 
-    let mut output = [0u8; 32];
-    hasher.finalize(&mut output);
-
-    Ok(output)
-}
-
-pub fn generate_message_digest(message: &[u8], skeleton_hash: &[u8; 32]) -> [u8; 32] {
-    let mut hasher = new_blake2b();
-    hasher.update(&(message.len() as u32).to_le_bytes());
-    hasher.update(message);
-    hasher.update(&skeleton_hash[..]);
-    let mut output = [0u8; 32];
-    hasher.finalize(&mut output);
-    return output;
+    let mut result = [0u8; 32];
+    hasher.finalize(&mut result);
+    return Ok(result);
 }
 
 ///
@@ -151,13 +148,13 @@ fn calculate_inputs_len() -> Result<usize, SysError> {
 
 ///
 /// parse transaction with message and return 2 values:
-/// 1. message digest, 32 bytes message for signature verification
+/// 1. signing_message_hash, 32 bytes message for signature verification
 /// 2. seal, seal field in SighashAll or SighashAllOnly. Normally as signature.
 /// This function is mainly used by lock script
 ///
 pub fn parse_message() -> Result<([u8; 32], Vec<u8>), Error> {
     check_others_in_group()?;
-    // Ensure that a SighashWitAll is present throughout the entire transaction
+    // Ensure that a SighashAll is present throughout the entire transaction
     let sighash_all = fetch_sighash_all()?;
     // There are 2 possible values: SighashAllOnly or SighashAll
     let witness = fetch_witness_layout()?;
@@ -168,7 +165,6 @@ pub fn parse_message() -> Result<([u8; 32], Vec<u8>), Error> {
             return Err(Error::WrongSighashAll);
         }
     };
-    let skeleton_hash = generate_skeleton_hash()?;
-    let message_digest = generate_message_digest(message.as_slice(), &skeleton_hash);
-    Ok((message_digest, lock.raw_data().into()))
+    let signing_message_hash = generate_signing_message_hash(message.as_slice())?;
+    Ok((signing_message_hash, lock.raw_data().into()))
 }
