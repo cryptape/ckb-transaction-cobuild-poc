@@ -4,7 +4,7 @@ pub mod blake2b;
 pub mod schemas;
 
 use alloc::vec::Vec;
-use blake2b::new_blake2b;
+use blake2b::new_sighash_all_blake2b;
 use ckb_std::{
     ckb_constants::Source,
     ckb_types::packed::CellInput,
@@ -100,7 +100,7 @@ pub fn check_others_in_group() -> Result<(), Error> {
 }
 
 pub fn generate_signing_message_hash(message: &[u8]) -> Result<[u8; 32], Error> {
-    let mut hasher = new_blake2b();
+    let mut hasher = new_sighash_all_blake2b();
     // message
     hasher.update(&(message.len() as u32).to_le_bytes());
     hasher.update(message);
