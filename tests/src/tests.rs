@@ -22,8 +22,8 @@ fn test_success() {
     witnesses.set_with_action(1);
 
     // deploy contract
-    let (tx, context) = gen_tx(&witnesses);
-    let tx = sign_tx(&mut witnesses, tx);
+    let (tx, resolved_inputs, context) = gen_tx(&witnesses);
+    let tx = sign_tx(&mut witnesses, tx, resolved_inputs);
     // run
     let cycles = context
         .verify_tx(&tx, MAX_CYCLES)
@@ -42,8 +42,8 @@ fn test_failed_pubkey() {
     witnesses.update();
 
     // deploy contract
-    let (tx, context) = gen_tx(&witnesses);
-    let tx = sign_tx(&mut witnesses, tx);
+    let (tx, resolved_inputs, context) = gen_tx(&witnesses);
+    let tx = sign_tx(&mut witnesses, tx, resolved_inputs);
     // run
     let err = context
         .verify_tx(&tx, MAX_CYCLES)

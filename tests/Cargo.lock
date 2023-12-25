@@ -467,6 +467,7 @@ name = "ckb-transaction-cobuild"
 version = "0.1.0"
 dependencies = [
  "blake2b-ref",
+ "ckb-gen-types",
  "ckb-std",
  "molecule",
 ]

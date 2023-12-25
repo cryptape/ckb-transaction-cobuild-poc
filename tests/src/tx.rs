@@ -9,7 +9,7 @@ use ckb_testtool::ckb_types::{
 };
 use ckb_testtool::context::Context;
 use ckb_transaction_cobuild::schemas::{
-    basic::{Message, SighashAll, SighashAllOnly},
+    basic::{Message, ResolvedInputs, SighashAll, SighashAllOnly},
     blockchain,
     top_level::{WitnessLayout, WitnessLayoutUnion},
 };
@@ -218,22 +218,26 @@ fn append_cells(context: &mut Context) -> (OutPoint, TransactionBuilder) {
     )
 }
 
-pub fn gen_tx(witnesses: &MessageWitnesses) -> (TransactionView, Context) {
+pub fn gen_tx(witnesses: &MessageWitnesses) -> (TransactionView, ResolvedInputs, Context) {
     let mut context = Context::default();
     let (out_point, mut tx) = append_cells(&mut context);
+    let mut cell_output_vec_builder = blockchain::CellOutputVec::new_builder();
+    let mut bytes_vec_builder = blockchain::BytesVec::new_builder();
 
     for data in &witnesses.message_data {
         for _ in 0..data.group_size {
             let lock_script = context
                 .build_script(&out_point, Bytes::from(data.pubkey_hash.to_vec()))
                 .expect("script");
-            let input_out_point = context.create_cell(
-                CellOutput::new_builder()
-                    .capacity(1000u64.pack())
-                    .lock(lock_script.clone())
-                    .build(),
-                Bytes::new(),
-            );
+            let cell = CellOutput::new_builder()
+                .capacity(1000u64.pack())
+                .lock(lock_script.clone())
+                .build();
+            let data = Bytes::new();
+            cell_output_vec_builder = cell_output_vec_builder.push(cell.clone());
+            bytes_vec_builder = bytes_vec_builder.push(blockchain::Bytes::new_builder().build());
+
+            let input_out_point = context.create_cell(cell, data);
             let input = CellInput::new_builder()
                 .previous_output(input_out_point)
                 .build();
@@ -268,25 +272,45 @@ pub fn gen_tx(witnesses: &MessageWitnesses) -> (TransactionView, Context) {
         .set_witnesses(witnesses.iter().map(|f| f.pack()).collect())
         .build();
     let tx = context.complete_tx(tx);
-    (tx, context)
+
+    let resolved_inputs = ResolvedInputs::new_builder()
+        .outputs(cell_output_vec_builder.build())
+        .outputs_data(bytes_vec_builder.build())
+        .build();
+    (tx, resolved_inputs, context)
 }
 
-fn generate_skeleton_hash(tx: &TransactionView) -> [u8; 32] {
+fn generate_signing_message_hash(
+    message: &[u8],
+    tx: &TransactionView,
+    resolved_inputs: &ResolvedInputs,
+) -> [u8; 32] {
     let mut hasher = new_blake2b();
-
+    // message
+    hasher.update(&(message.len() as u32).to_le_bytes());
+    hasher.update(message);
+    // tx hash
     hasher.update(tx.hash().as_slice());
-
-    for i in tx.inputs().len()..tx.witnesses().len() {
-        let w = tx.witnesses().get(i).unwrap();
-        let w = w.as_slice()[4..].to_vec();
-
-        hasher.update(&w.len().to_le_bytes());
-        hasher.update(&w);
+    // inputs cell and data
+    let inputs_len = tx.inputs().len();
+    debug_assert!(inputs_len == resolved_inputs.outputs().len());
+    debug_assert!(inputs_len == resolved_inputs.outputs_data().len());
+    for i in 0..inputs_len {
+        let input_cell = resolved_inputs.outputs().get(i).unwrap();
+        hasher.update(&input_cell.as_slice());
+        let input_cell_data = resolved_inputs.outputs_data().get(i).unwrap();
+        hasher.update(&(input_cell_data.len() as u32).to_le_bytes());
+        hasher.update(&input_cell_data.raw_data());
+    }
+    // extra witnesses
+    for witness in tx.witnesses().into_iter().skip(inputs_len) {
+        hasher.update(&(witness.len() as u32).to_le_bytes());
+        hasher.update(&witness.raw_data());
     }
 
-    let mut ret_hash = [0u8; 32];
-    hasher.finalize(&mut ret_hash);
-    ret_hash
+    let mut result = [0u8; 32];
+    hasher.finalize(&mut result);
+    result
 }
 
 fn witness_is_empty(tx: &TransactionView, index: usize) -> bool {
@@ -303,31 +327,26 @@ fn witness_is_empty(tx: &TransactionView, index: usize) -> bool {
     false
 }
 
-pub fn sign_tx(witnesses: &mut MessageWitnesses, tx: TransactionView) -> TransactionView {
-    // get sign message
-    let skeleton_hash = generate_skeleton_hash(&tx);
+pub fn sign_tx(
+    witnesses: &mut MessageWitnesses,
+    tx: TransactionView,
+    resolved_inputs: ResolvedInputs,
+) -> TransactionView {
+    let message = witnesses.get_action().as_slice().to_vec();
+    let signing_message_hash = generate_signing_message_hash(&message, &tx, &resolved_inputs);
 
-    let msg = witnesses.get_action().as_slice().to_vec();
     let mut data_count = 0usize;
     for i in 0..tx.inputs().len() {
         if witness_is_empty(&tx, i) {
             continue;
         }
 
-        let mut hasher = new_blake2b();
-        hasher.update(&msg.len().to_le_bytes());
-        hasher.update(&msg);
-        hasher.update(&skeleton_hash);
-
-        let mut message_digest = [0u8; 32];
-        hasher.finalize(&mut message_digest);
-
         let sign = witnesses
             .message_data
             .get(data_count)
             .unwrap()
             .privkey
-            .sign_recoverable(&SecpMessage::from_slice(&message_digest).unwrap())
+            .sign_recoverable(&SecpMessage::from_slice(&signing_message_hash).unwrap())
             .expect("sign")
             .serialize();
 

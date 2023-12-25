@@ -40,6 +40,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "ckb-gen-types"
+version = "0.111.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a3bc54ca99b09e1eb5fc6c49bb1156644ce57fce9c6f52b5c13110b9a3143f7e"
+dependencies = [
+ "cfg-if",
+ "molecule",
+]
+
+[[package]]
 name = "ckb-standalone-types"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -66,6 +76,7 @@ name = "ckb-transaction-cobuild"
 version = "0.1.0"
 dependencies = [
  "blake2b-ref",
+ "ckb-gen-types",
  "ckb-std",
  "molecule",
 ]
