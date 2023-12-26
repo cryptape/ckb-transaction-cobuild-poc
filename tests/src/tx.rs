@@ -281,14 +281,13 @@ pub fn gen_tx(witnesses: &MessageWitnesses) -> (TransactionView, ResolvedInputs,
 }
 
 fn generate_signing_message_hash(
-    message: &[u8],
+    message: &Message,
     tx: &TransactionView,
     resolved_inputs: &ResolvedInputs,
 ) -> [u8; 32] {
     let mut hasher = new_sighash_all_blake2b();
     // message
-    hasher.update(&(message.len() as u32).to_le_bytes());
-    hasher.update(message);
+    hasher.update(message.as_slice());
     // tx hash
     hasher.update(tx.hash().as_slice());
     // inputs cell and data
@@ -332,8 +331,7 @@ pub fn sign_tx(
     tx: TransactionView,
     resolved_inputs: ResolvedInputs,
 ) -> TransactionView {
-    let message = witnesses.get_action().as_slice().to_vec();
-    let signing_message_hash = generate_signing_message_hash(&message, &tx, &resolved_inputs);
+    let signing_message_hash = generate_signing_message_hash(witnesses.get_action(), &tx, &resolved_inputs);
 
     let mut data_count = 0usize;
     for i in 0..tx.inputs().len() {

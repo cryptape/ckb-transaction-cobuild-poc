@@ -19,7 +19,7 @@ use molecule::{
     NUMBER_SIZE,
 };
 use schemas::{
-    basic::SighashAll,
+    basic::{Message, SighashAll},
     top_level::{WitnessLayout, WitnessLayoutReader, WitnessLayoutUnion, WitnessLayoutUnionReader},
 };
 
@@ -99,11 +99,10 @@ pub fn check_others_in_group() -> Result<(), Error> {
     }
 }
 
-pub fn generate_signing_message_hash(message: &[u8]) -> Result<[u8; 32], Error> {
+pub fn generate_signing_message_hash(message: &Message) -> Result<[u8; 32], Error> {
     let mut hasher = new_sighash_all_blake2b();
     // message
-    hasher.update(&(message.len() as u32).to_le_bytes());
-    hasher.update(message);
+    hasher.update(message.as_slice());
     // tx hash
     hasher.update(&load_tx_hash()?);
     // inputs cell and data
@@ -165,6 +164,6 @@ pub fn parse_message() -> Result<([u8; 32], Vec<u8>), Error> {
             return Err(Error::WrongSighashAll);
         }
     };
-    let signing_message_hash = generate_signing_message_hash(message.as_slice())?;
+    let signing_message_hash = generate_signing_message_hash(&message)?;
     Ok((signing_message_hash, lock.raw_data().into()))
 }
