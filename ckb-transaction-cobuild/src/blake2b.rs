@@ -1,18 +1,26 @@
 pub use blake2b_ref::{Blake2b, Blake2bBuilder};
 
-pub const CKB_PERSONALIZATION: &[u8] = b"ckb-default-hash";
+pub const PERSONALIZATION_SIGHASH_ALL: &[u8] = b"ckb-tcob-sighash";
+pub const PERSONALIZATION_SIGHASH_ALL_ONLY: &[u8] = b"ckb-tcob-sgohash";
+pub const PERSONALIZATION_OTX: &[u8] = b"ckb-tcob-otxhash";
 
-pub fn new_blake2b() -> Blake2b {
+/// return a blake2b instance with personalization for SighashAll
+pub fn new_sighash_all_blake2b() -> Blake2b {
     Blake2bBuilder::new(32)
-        .personal(CKB_PERSONALIZATION)
+        .personal(PERSONALIZATION_SIGHASH_ALL)
         .build()
 }
 
-pub fn hash(bytes: &[u8]) -> [u8; 32] {
-    let mut hasher = new_blake2b();
-    hasher.update(bytes);
+/// return a blake2b instance with personalization for SighashAllOnly
+pub fn new_sighash_all_only_blake2b() -> Blake2b {
+    Blake2bBuilder::new(32)
+        .personal(PERSONALIZATION_SIGHASH_ALL_ONLY)
+        .build()
+}
 
-    let mut hash = [0u8; 32];
-    hasher.finalize(&mut hash);
-    hash
+/// return a blake2b instance with personalization for OTX
+pub fn new_otx_blake2b() -> Blake2b {
+    Blake2bBuilder::new(32)
+        .personal(PERSONALIZATION_OTX)
+        .build()
 }

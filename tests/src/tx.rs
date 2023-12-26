@@ -1,6 +1,5 @@
 use super::*;
 use ckb_testtool::ckb_crypto::secp::{Generator, Message as SecpMessage, Privkey};
-use ckb_testtool::ckb_hash::new_blake2b;
 use ckb_testtool::ckb_types::{
     bytes::Bytes,
     core::{DepType, TransactionBuilder, TransactionView},
@@ -8,6 +7,7 @@ use ckb_testtool::ckb_types::{
     prelude::*,
 };
 use ckb_testtool::context::Context;
+use ckb_transaction_cobuild::blake2b::new_sighash_all_blake2b;
 use ckb_transaction_cobuild::schemas::{
     basic::{Message, ResolvedInputs, SighashAll, SighashAllOnly},
     blockchain,
@@ -285,7 +285,7 @@ fn generate_signing_message_hash(
     tx: &TransactionView,
     resolved_inputs: &ResolvedInputs,
 ) -> [u8; 32] {
-    let mut hasher = new_blake2b();
+    let mut hasher = new_sighash_all_blake2b();
     // message
     hasher.update(&(message.len() as u32).to_le_bytes());
     hasher.update(message);
