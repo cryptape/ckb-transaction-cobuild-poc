@@ -15,11 +15,27 @@ fn assert_script_error(err: Error, err_code: i8) {
 }
 
 #[test]
-fn test_success() {
+fn test_success_sighash_all() {
     let others_witnesses = vec![];
 
     let mut witnesses = MessageWitnesses::new(vec![3, 1, 2], others_witnesses);
     witnesses.set_with_action(1);
+
+    // deploy contract
+    let (tx, resolved_inputs, context) = gen_tx(&witnesses);
+    let tx = sign_tx(&mut witnesses, tx, resolved_inputs);
+    // run
+    let cycles = context
+        .verify_tx(&tx, MAX_CYCLES)
+        .expect("pass verification");
+    println!("consume cycles: {}", cycles);
+}
+
+#[test]
+fn test_success_sighash_all_only() {
+    let others_witnesses = vec![];
+
+    let mut witnesses = MessageWitnesses::new(vec![3, 1, 2], others_witnesses);
 
     // deploy contract
     let (tx, resolved_inputs, context) = gen_tx(&witnesses);

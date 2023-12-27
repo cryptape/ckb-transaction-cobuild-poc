@@ -7,7 +7,7 @@ use ckb_testtool::ckb_types::{
     prelude::*,
 };
 use ckb_testtool::context::Context;
-use ckb_transaction_cobuild::blake2b::new_sighash_all_blake2b;
+use ckb_transaction_cobuild::blake2b::{new_sighash_all_blake2b, new_sighash_all_only_blake2b};
 use ckb_transaction_cobuild::schemas::{
     basic::{Message, ResolvedInputs, SighashAll, SighashAllOnly},
     blockchain,
@@ -151,13 +151,13 @@ impl MessageWitnesses {
         witnesses
     }
 
-    pub fn get_action(&self) -> &Message {
+    pub fn get_action(&self) -> Option<Message> {
         for d in &self.message_data {
             if d.action.is_some() {
-                return d.action.as_ref().unwrap();
+                return d.action.clone();
             }
         }
-        panic!("none")
+        None
     }
 
     pub fn get_types_data_by_args(&self, args: &[u8]) -> &MessageData {
@@ -281,13 +281,19 @@ pub fn gen_tx(witnesses: &MessageWitnesses) -> (TransactionView, ResolvedInputs,
 }
 
 fn generate_signing_message_hash(
-    message: &Message,
+    message: &Option<Message>,
     tx: &TransactionView,
     resolved_inputs: &ResolvedInputs,
 ) -> [u8; 32] {
-    let mut hasher = new_sighash_all_blake2b();
     // message
-    hasher.update(message.as_slice());
+    let mut hasher = match message {
+        Some(m) => {
+            let mut hasher = new_sighash_all_blake2b();
+            hasher.update(m.as_slice());
+            hasher
+        }
+        None => new_sighash_all_only_blake2b(),
+    };
     // tx hash
     hasher.update(tx.hash().as_slice());
     // inputs cell and data
@@ -331,7 +337,7 @@ pub fn sign_tx(
     tx: TransactionView,
     resolved_inputs: ResolvedInputs,
 ) -> TransactionView {
-    let signing_message_hash = generate_signing_message_hash(witnesses.get_action(), &tx, &resolved_inputs);
+    let signing_message_hash = generate_signing_message_hash(&witnesses.get_action(), &tx, &resolved_inputs);
 
     let mut data_count = 0usize;
     for i in 0..tx.inputs().len() {
