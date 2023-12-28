@@ -1,4 +1,4 @@
 {
-    "rust-analyzer.cargo.target": "riscv64imac-unknown-none-elf"
+    "rust-analyzer.cargo.target": "riscv64imac-unknown-none-elf",
+    "rust-analyzer.showUnlinkedFileNotification": false
 }
-

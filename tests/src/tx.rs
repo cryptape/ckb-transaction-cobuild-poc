@@ -9,7 +9,7 @@ use ckb_testtool::ckb_types::{
 use ckb_testtool::context::Context;
 use ckb_transaction_cobuild::blake2b::{new_sighash_all_blake2b, new_sighash_all_only_blake2b};
 use ckb_transaction_cobuild::schemas::{
-    basic::{Message, ResolvedInputs, SighashAll, SighashAllOnly},
+    basic::{Message, ResolvedInputs, SighashAll, SighashAllOnly, Action, ActionVec},
     blockchain,
     top_level::{WitnessLayout, WitnessLayoutUnion},
 };
@@ -115,8 +115,6 @@ impl MessageWitnesses {
     }
 
     pub fn set_with_action(&mut self, index: usize) {
-        use ckb_transaction_cobuild::schemas::basic::{Action, ActionVec};
-
         let actions = vec![
             Action::new_builder()
                 .script_info_hash(Self::rng_byte32())
@@ -194,7 +192,7 @@ impl MessageWitnesses {
     }
 }
 
-fn append_cells(context: &mut Context) -> (OutPoint, TransactionBuilder) {
+fn append_cells(context: &mut Context) -> (OutPoint, OutPoint, TransactionBuilder) {
     let loader = Loader::default();
     let tx = TransactionBuilder::default();
 
@@ -214,20 +212,21 @@ fn append_cells(context: &mut Context) -> (OutPoint, TransactionBuilder) {
 
     (
         context.deploy_cell(loader.load_binary("transaction-cobuild-lock-demo")),
+        context.deploy_cell(loader.load_binary("transaction-cobuild-type-demo")),
         tx,
     )
 }
 
 pub fn gen_tx(witnesses: &MessageWitnesses) -> (TransactionView, ResolvedInputs, Context) {
     let mut context = Context::default();
-    let (out_point, mut tx) = append_cells(&mut context);
+    let (lock_script_out_point, type_script_out_point, mut tx) = append_cells(&mut context);
     let mut cell_output_vec_builder = blockchain::CellOutputVec::new_builder();
     let mut bytes_vec_builder = blockchain::BytesVec::new_builder();
 
     for data in &witnesses.message_data {
         for _ in 0..data.group_size {
             let lock_script = context
-                .build_script(&out_point, Bytes::from(data.pubkey_hash.to_vec()))
+                .build_script(&lock_script_out_point, Bytes::from(data.pubkey_hash.to_vec()))
                 .expect("script");
             let cell = CellOutput::new_builder()
                 .capacity(1000u64.pack())
@@ -247,7 +246,11 @@ pub fn gen_tx(witnesses: &MessageWitnesses) -> (TransactionView, ResolvedInputs,
     }
 
     let output_lock_script = context
-        .build_script(&out_point, Bytes::from(vec![]))
+        .build_script(&lock_script_out_point, Bytes::from(vec![]))
+        .expect("script");
+
+    let output_type_script = context
+        .build_script(&type_script_out_point, Bytes::from(vec![]))
         .expect("script");
 
     let outputs = vec![
@@ -258,10 +261,11 @@ pub fn gen_tx(witnesses: &MessageWitnesses) -> (TransactionView, ResolvedInputs,
         CellOutput::new_builder()
             .capacity(500u64.pack())
             .lock(output_lock_script.clone())
+            .type_(Some(output_type_script.clone()).pack())
             .build(),
     ];
 
-    let outputs_data = vec![Bytes::new(); 2];
+    let outputs_data = [Bytes::from(vec![0]).pack(), Bytes::from(vec![1]).pack()];
 
     let witnesses: Vec<Bytes> = witnesses.get_witnesses();
 
