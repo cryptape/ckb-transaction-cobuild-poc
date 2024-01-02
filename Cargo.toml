@@ -1,5 +1,5 @@
 [workspace]
-members = ["ckb-transaction-cobuild", "contracts/transaction-cobuild-lock-demo"]
+members = ["ckb-transaction-cobuild", "contracts/transaction-cobuild-lock-demo", "contracts/transaction-cobuild-type-demo"]
 exclude = ["tests"]
 
 [profile.release]

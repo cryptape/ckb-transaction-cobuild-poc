@@ -118,3 +118,11 @@ dependencies = [
  "ckb-transaction-cobuild",
  "molecule",
 ]
+
+[[package]]
+name = "transaction-cobuild-type-demo"
+version = "0.1.0"
+dependencies = [
+ "ckb-std",
+ "ckb-transaction-cobuild",
+]

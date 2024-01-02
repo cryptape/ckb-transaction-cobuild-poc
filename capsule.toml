@@ -11,3 +11,7 @@ deployment = "deployment.toml"
 [[contracts]]
 name = "transaction-cobuild-lock-demo"
 template_type = "Rust"
+
+[[contracts]]
+name = "transaction-cobuild-type-demo"
+template_type = "Rust"
