@@ -9,7 +9,7 @@ use ckb_testtool::ckb_types::{
 use ckb_testtool::context::Context;
 use ckb_transaction_cobuild::blake2b::{new_sighash_all_blake2b, new_sighash_all_only_blake2b};
 use ckb_transaction_cobuild::schemas::{
-    basic::{Message, ResolvedInputs, SighashAll, SighashAllOnly, Action, ActionVec},
+    basic::{Action, ActionVec, Message, ResolvedInputs, SighashAll, SighashAllOnly},
     blockchain,
     top_level::{WitnessLayout, WitnessLayoutUnion},
 };
@@ -226,7 +226,10 @@ pub fn gen_tx(witnesses: &MessageWitnesses) -> (TransactionView, ResolvedInputs,
     for data in &witnesses.message_data {
         for _ in 0..data.group_size {
             let lock_script = context
-                .build_script(&lock_script_out_point, Bytes::from(data.pubkey_hash.to_vec()))
+                .build_script(
+                    &lock_script_out_point,
+                    Bytes::from(data.pubkey_hash.to_vec()),
+                )
                 .expect("script");
             let cell = CellOutput::new_builder()
                 .capacity(1000u64.pack())
@@ -341,7 +344,8 @@ pub fn sign_tx(
     tx: TransactionView,
     resolved_inputs: ResolvedInputs,
 ) -> TransactionView {
-    let signing_message_hash = generate_signing_message_hash(&witnesses.get_action(), &tx, &resolved_inputs);
+    let signing_message_hash =
+        generate_signing_message_hash(&witnesses.get_action(), &tx, &resolved_inputs);
 
     let mut data_count = 0usize;
     for i in 0..tx.inputs().len() {

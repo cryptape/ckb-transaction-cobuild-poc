@@ -36,7 +36,6 @@ table ResolvedInputs {
 		outputs_data: BytesVec,
 }
 
-
 table BuildingPacketV1 {
     message: Message,
     payload: Transaction,
@@ -51,15 +50,20 @@ union BuildingPacket {
 }
 
 table SighashAll {
-    seal: Bytes,
     message: Message,
+    seal: Bytes,
 }
 
 table SighashAllOnly {
     seal: Bytes,
 }
 
-// TODO: under construction
+table SealPair {
+    script_hash: Byte32,
+    seal: Bytes,
+}
+vector SealPairVec <SealPair>;
+
 table OtxStart {
     start_input_cell: Uint32,
     start_output_cell: Uint32,
@@ -67,12 +71,11 @@ table OtxStart {
     start_header_deps: Uint32,
 }
 
-// TODO: under construction
 table Otx {
-    lock: Bytes,
     input_cells: Uint32,
     output_cells: Uint32,
     cell_deps: Uint32,
     header_deps: Uint32,
     message: Message,
+    seals: SealPairVec,
 }

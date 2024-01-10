@@ -120,6 +120,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "transaction-cobuild-otx-lock-demo"
+version = "0.1.0"
+dependencies = [
+ "blake2b-ref",
+ "ckb-auth-rs",
+ "ckb-std",
+ "ckb-transaction-cobuild",
+ "molecule",
+]
+
+[[package]]
 name = "transaction-cobuild-type-demo"
 version = "0.1.0"
 dependencies = [
