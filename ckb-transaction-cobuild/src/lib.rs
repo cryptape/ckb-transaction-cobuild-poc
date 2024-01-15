@@ -11,8 +11,7 @@ use ckb_std::{
     ckb_types::packed::{CellInput, Transaction},
     error::SysError,
     high_level::{
-        self, load_cell, load_cell_data, load_cell_lock_hash, load_script_hash, load_tx_hash,
-        load_witness, QueryIter,
+        self, load_cell, load_cell_data, load_cell_lock_hash, load_tx_hash, load_witness, QueryIter,
     },
     syscalls::load_transaction,
 };
@@ -296,10 +295,30 @@ impl Iterator for OtxMessageIter {
 }
 
 ///
+/// verify all otx messages with the given script hash and verify function
+/// This function is mainly used by lock script
+///
+pub fn verify_otx_message<F: Fn(&[u8], &[u8; 32]) -> bool>(
+    current_script_hash: [u8; 32],
+    verify: F,
+) -> Result<bool, Error> {
+    let mut otx_message_iter = parse_otx_message(current_script_hash)?;
+    let verified = otx_message_iter.all(|(message_digest, seals)| {
+        seals
+            .into_iter()
+            .filter(|seal_pair| {
+                seal_pair.script_hash().as_slice() == current_script_hash.as_slice()
+            })
+            .any(|seal_pair| verify(&seal_pair.seal().raw_data(), &message_digest))
+    });
+    Ok(verified)
+}
+
+///
 /// parse transaction and return `OtxMessageIter`
 /// This function is mainly used by lock script
 ///
-pub fn parse_otx_message() -> Result<OtxMessageIter, Error> {
+pub fn parse_otx_message(current_script_hash: [u8; 32]) -> Result<OtxMessageIter, Error> {
     let (otx_start, start_index) = fetch_otx_start()?;
     let start_input_cell: u32 = otx_start.start_input_cell().unpack();
     let start_output_cell: u32 = otx_start.start_output_cell().unpack();
@@ -307,7 +326,6 @@ pub fn parse_otx_message() -> Result<OtxMessageIter, Error> {
     let start_header_deps: u32 = otx_start.start_header_deps().unpack();
 
     let tx = high_level::load_transaction()?;
-    let current_script_hash = load_script_hash()?;
 
     Ok(OtxMessageIter {
         tx,

@@ -2,7 +2,7 @@ use ckb_std::{
     ckb_types::{bytes::Bytes, core::ScriptHashType, prelude::*},
     high_level::{load_script, load_script_hash},
 };
-use ckb_transaction_cobuild::parse_otx_message;
+use ckb_transaction_cobuild::verify_otx_message;
 use core::result::Result;
 
 use crate::error::Error;
@@ -20,7 +20,7 @@ pub fn main() -> Result<(), Error> {
     let mut pubkey_hash = [0u8; 20];
     let script = load_script()?;
     let args: Bytes = script.args().unpack();
-    let script_hash = load_script_hash()?;
+    let current_script_hash = load_script_hash()?;
     pubkey_hash.copy_from_slice(&args[0..20]);
 
     let id = CkbAuthType {
@@ -34,20 +34,17 @@ pub fn main() -> Result<(), Error> {
         entry_category: EntryCategoryType::DynamicLinking,
     };
 
-    let mut found = false;
-    for (message_digest, seals) in parse_otx_message()? {
-        for seal_pair in seals {
-            if seal_pair.script_hash().as_slice() == script_hash.as_slice() {
-                ckb_auth(&entry, &id, &seal_pair.seal().raw_data(), &message_digest)
-                    .map_err(|_| Error::AuthError)?;
-                found = true;
-            }
+    let verify = |seal: &[u8], message_digest: &[u8; 32]| {
+        let auth_result = ckb_auth(&entry, &id, seal, message_digest);
+        match auth_result {
+            Ok(_) => true,
+            Err(_) => false,
         }
-    }
-
-    if found {
+    };
+    let verify_pass = verify_otx_message(current_script_hash, verify)?;
+    if verify_pass {
         Ok(())
     } else {
-        Err(Error::AuthError)
+        return Err(Error::AuthError);
     }
 }
