@@ -33,8 +33,8 @@ impl ::core::default::Default for WitnessLayout {
 }
 impl WitnessLayout {
     const DEFAULT_VALUE: [u8; 32] = [
-        1, 0, 0, 255, 28, 0, 0, 0, 12, 0, 0, 0, 16, 0, 0, 0, 0, 0, 0, 0, 12, 0, 0, 0, 8, 0, 0, 0,
-        4, 0, 0, 0,
+        1, 0, 0, 255, 28, 0, 0, 0, 12, 0, 0, 0, 24, 0, 0, 0, 12, 0, 0, 0, 8, 0, 0, 0, 4, 0, 0, 0,
+        0, 0, 0, 0,
     ];
     pub const ITEMS_COUNT: usize = 4;
     pub fn item_id(&self) -> molecule::Number {

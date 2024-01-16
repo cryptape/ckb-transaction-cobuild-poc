@@ -3442,8 +3442,8 @@ impl ::core::fmt::Debug for SighashAll {
 impl ::core::fmt::Display for SighashAll {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "{} {{ ", Self::NAME)?;
-        write!(f, "{}: {}", "seal", self.seal())?;
-        write!(f, ", {}: {}", "message", self.message())?;
+        write!(f, "{}: {}", "message", self.message())?;
+        write!(f, ", {}: {}", "seal", self.seal())?;
         let extra_count = self.count_extra_fields();
         if extra_count != 0 {
             write!(f, ", .. ({} fields)", extra_count)?;
@@ -3459,7 +3459,7 @@ impl ::core::default::Default for SighashAll {
 }
 impl SighashAll {
     const DEFAULT_VALUE: [u8; 28] = [
-        28, 0, 0, 0, 12, 0, 0, 0, 16, 0, 0, 0, 0, 0, 0, 0, 12, 0, 0, 0, 8, 0, 0, 0, 4, 0, 0, 0,
+        28, 0, 0, 0, 12, 0, 0, 0, 24, 0, 0, 0, 12, 0, 0, 0, 8, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0,
     ];
     pub const FIELD_COUNT: usize = 2;
     pub fn total_size(&self) -> usize {
@@ -3478,20 +3478,20 @@ impl SighashAll {
     pub fn has_extra_fields(&self) -> bool {
         Self::FIELD_COUNT != self.field_count()
     }
-    pub fn seal(&self) -> Bytes {
+    pub fn message(&self) -> Message {
         let slice = self.as_slice();
         let start = molecule::unpack_number(&slice[4..]) as usize;
         let end = molecule::unpack_number(&slice[8..]) as usize;
-        Bytes::new_unchecked(self.0.slice(start..end))
+        Message::new_unchecked(self.0.slice(start..end))
     }
-    pub fn message(&self) -> Message {
+    pub fn seal(&self) -> Bytes {
         let slice = self.as_slice();
         let start = molecule::unpack_number(&slice[8..]) as usize;
         if self.has_extra_fields() {
             let end = molecule::unpack_number(&slice[12..]) as usize;
-            Message::new_unchecked(self.0.slice(start..end))
+            Bytes::new_unchecked(self.0.slice(start..end))
         } else {
-            Message::new_unchecked(self.0.slice(start..))
+            Bytes::new_unchecked(self.0.slice(start..))
         }
     }
     pub fn as_reader<'r>(&'r self) -> SighashAllReader<'r> {
@@ -3521,8 +3521,8 @@ impl molecule::prelude::Entity for SighashAll {
     }
     fn as_builder(self) -> Self::Builder {
         Self::new_builder()
-            .seal(self.seal())
             .message(self.message())
+            .seal(self.seal())
     }
 }
 #[derive(Clone, Copy)]
@@ -3544,8 +3544,8 @@ impl<'r> ::core::fmt::Debug for SighashAllReader<'r> {
 impl<'r> ::core::fmt::Display for SighashAllReader<'r> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "{} {{ ", Self::NAME)?;
-        write!(f, "{}: {}", "seal", self.seal())?;
-        write!(f, ", {}: {}", "message", self.message())?;
+        write!(f, "{}: {}", "message", self.message())?;
+        write!(f, ", {}: {}", "seal", self.seal())?;
         let extra_count = self.count_extra_fields();
         if extra_count != 0 {
             write!(f, ", .. ({} fields)", extra_count)?;
@@ -3571,20 +3571,20 @@ impl<'r> SighashAllReader<'r> {
     pub fn has_extra_fields(&self) -> bool {
         Self::FIELD_COUNT != self.field_count()
     }
-    pub fn seal(&self) -> BytesReader<'r> {
+    pub fn message(&self) -> MessageReader<'r> {
         let slice = self.as_slice();
         let start = molecule::unpack_number(&slice[4..]) as usize;
         let end = molecule::unpack_number(&slice[8..]) as usize;
-        BytesReader::new_unchecked(&self.as_slice()[start..end])
+        MessageReader::new_unchecked(&self.as_slice()[start..end])
     }
-    pub fn message(&self) -> MessageReader<'r> {
+    pub fn seal(&self) -> BytesReader<'r> {
         let slice = self.as_slice();
         let start = molecule::unpack_number(&slice[8..]) as usize;
         if self.has_extra_fields() {
             let end = molecule::unpack_number(&slice[12..]) as usize;
-            MessageReader::new_unchecked(&self.as_slice()[start..end])
+            BytesReader::new_unchecked(&self.as_slice()[start..end])
         } else {
-            MessageReader::new_unchecked(&self.as_slice()[start..])
+            BytesReader::new_unchecked(&self.as_slice()[start..])
         }
     }
 }
@@ -3634,24 +3634,24 @@ impl<'r> molecule::prelude::Reader<'r> for SighashAllReader<'r> {
         if offsets.windows(2).any(|i| i[0] > i[1]) {
             return ve!(Self, OffsetsNotMatch);
         }
-        BytesReader::verify(&slice[offsets[0]..offsets[1]], compatible)?;
-        MessageReader::verify(&slice[offsets[1]..offsets[2]], compatible)?;
+        MessageReader::verify(&slice[offsets[0]..offsets[1]], compatible)?;
+        BytesReader::verify(&slice[offsets[1]..offsets[2]], compatible)?;
         Ok(())
     }
 }
 #[derive(Debug, Default)]
 pub struct SighashAllBuilder {
-    pub(crate) seal: Bytes,
     pub(crate) message: Message,
+    pub(crate) seal: Bytes,
 }
 impl SighashAllBuilder {
     pub const FIELD_COUNT: usize = 2;
-    pub fn seal(mut self, v: Bytes) -> Self {
-        self.seal = v;
-        self
-    }
     pub fn message(mut self, v: Message) -> Self {
         self.message = v;
+        self
+    }
+    pub fn seal(mut self, v: Bytes) -> Self {
+        self.seal = v;
         self
     }
 }
@@ -3660,22 +3660,22 @@ impl molecule::prelude::Builder for SighashAllBuilder {
     const NAME: &'static str = "SighashAllBuilder";
     fn expected_length(&self) -> usize {
         molecule::NUMBER_SIZE * (Self::FIELD_COUNT + 1)
-            + self.seal.as_slice().len()
             + self.message.as_slice().len()
+            + self.seal.as_slice().len()
     }
     fn write<W: molecule::io::Write>(&self, writer: &mut W) -> molecule::io::Result<()> {
         let mut total_size = molecule::NUMBER_SIZE * (Self::FIELD_COUNT + 1);
         let mut offsets = Vec::with_capacity(Self::FIELD_COUNT);
         offsets.push(total_size);
-        total_size += self.seal.as_slice().len();
-        offsets.push(total_size);
         total_size += self.message.as_slice().len();
+        offsets.push(total_size);
+        total_size += self.seal.as_slice().len();
         writer.write_all(&molecule::pack_number(total_size as molecule::Number))?;
         for offset in offsets.into_iter() {
             writer.write_all(&molecule::pack_number(offset as molecule::Number))?;
         }
-        writer.write_all(self.seal.as_slice())?;
         writer.write_all(self.message.as_slice())?;
+        writer.write_all(self.seal.as_slice())?;
         Ok(())
     }
     fn build(&self) -> Self::Entity {
@@ -3916,6 +3916,609 @@ impl molecule::prelude::Builder for SighashAllOnlyBuilder {
         self.write(&mut inner)
             .unwrap_or_else(|_| panic!("{} build should be ok", Self::NAME));
         SighashAllOnly::new_unchecked(inner.into())
+    }
+}
+#[derive(Clone)]
+pub struct SealPair(molecule::bytes::Bytes);
+impl ::core::fmt::LowerHex for SealPair {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        use molecule::hex_string;
+        if f.alternate() {
+            write!(f, "0x")?;
+        }
+        write!(f, "{}", hex_string(self.as_slice()))
+    }
+}
+impl ::core::fmt::Debug for SealPair {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{}({:#x})", Self::NAME, self)
+    }
+}
+impl ::core::fmt::Display for SealPair {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{} {{ ", Self::NAME)?;
+        write!(f, "{}: {}", "script_hash", self.script_hash())?;
+        write!(f, ", {}: {}", "seal", self.seal())?;
+        let extra_count = self.count_extra_fields();
+        if extra_count != 0 {
+            write!(f, ", .. ({} fields)", extra_count)?;
+        }
+        write!(f, " }}")
+    }
+}
+impl ::core::default::Default for SealPair {
+    fn default() -> Self {
+        let v = molecule::bytes::Bytes::from_static(&Self::DEFAULT_VALUE);
+        SealPair::new_unchecked(v)
+    }
+}
+impl SealPair {
+    const DEFAULT_VALUE: [u8; 48] = [
+        48, 0, 0, 0, 12, 0, 0, 0, 44, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    ];
+    pub const FIELD_COUNT: usize = 2;
+    pub fn total_size(&self) -> usize {
+        molecule::unpack_number(self.as_slice()) as usize
+    }
+    pub fn field_count(&self) -> usize {
+        if self.total_size() == molecule::NUMBER_SIZE {
+            0
+        } else {
+            (molecule::unpack_number(&self.as_slice()[molecule::NUMBER_SIZE..]) as usize / 4) - 1
+        }
+    }
+    pub fn count_extra_fields(&self) -> usize {
+        self.field_count() - Self::FIELD_COUNT
+    }
+    pub fn has_extra_fields(&self) -> bool {
+        Self::FIELD_COUNT != self.field_count()
+    }
+    pub fn script_hash(&self) -> Byte32 {
+        let slice = self.as_slice();
+        let start = molecule::unpack_number(&slice[4..]) as usize;
+        let end = molecule::unpack_number(&slice[8..]) as usize;
+        Byte32::new_unchecked(self.0.slice(start..end))
+    }
+    pub fn seal(&self) -> Bytes {
+        let slice = self.as_slice();
+        let start = molecule::unpack_number(&slice[8..]) as usize;
+        if self.has_extra_fields() {
+            let end = molecule::unpack_number(&slice[12..]) as usize;
+            Bytes::new_unchecked(self.0.slice(start..end))
+        } else {
+            Bytes::new_unchecked(self.0.slice(start..))
+        }
+    }
+    pub fn as_reader<'r>(&'r self) -> SealPairReader<'r> {
+        SealPairReader::new_unchecked(self.as_slice())
+    }
+}
+impl molecule::prelude::Entity for SealPair {
+    type Builder = SealPairBuilder;
+    const NAME: &'static str = "SealPair";
+    fn new_unchecked(data: molecule::bytes::Bytes) -> Self {
+        SealPair(data)
+    }
+    fn as_bytes(&self) -> molecule::bytes::Bytes {
+        self.0.clone()
+    }
+    fn as_slice(&self) -> &[u8] {
+        &self.0[..]
+    }
+    fn from_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
+        SealPairReader::from_slice(slice).map(|reader| reader.to_entity())
+    }
+    fn from_compatible_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
+        SealPairReader::from_compatible_slice(slice).map(|reader| reader.to_entity())
+    }
+    fn new_builder() -> Self::Builder {
+        ::core::default::Default::default()
+    }
+    fn as_builder(self) -> Self::Builder {
+        Self::new_builder()
+            .script_hash(self.script_hash())
+            .seal(self.seal())
+    }
+}
+#[derive(Clone, Copy)]
+pub struct SealPairReader<'r>(&'r [u8]);
+impl<'r> ::core::fmt::LowerHex for SealPairReader<'r> {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        use molecule::hex_string;
+        if f.alternate() {
+            write!(f, "0x")?;
+        }
+        write!(f, "{}", hex_string(self.as_slice()))
+    }
+}
+impl<'r> ::core::fmt::Debug for SealPairReader<'r> {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{}({:#x})", Self::NAME, self)
+    }
+}
+impl<'r> ::core::fmt::Display for SealPairReader<'r> {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{} {{ ", Self::NAME)?;
+        write!(f, "{}: {}", "script_hash", self.script_hash())?;
+        write!(f, ", {}: {}", "seal", self.seal())?;
+        let extra_count = self.count_extra_fields();
+        if extra_count != 0 {
+            write!(f, ", .. ({} fields)", extra_count)?;
+        }
+        write!(f, " }}")
+    }
+}
+impl<'r> SealPairReader<'r> {
+    pub const FIELD_COUNT: usize = 2;
+    pub fn total_size(&self) -> usize {
+        molecule::unpack_number(self.as_slice()) as usize
+    }
+    pub fn field_count(&self) -> usize {
+        if self.total_size() == molecule::NUMBER_SIZE {
+            0
+        } else {
+            (molecule::unpack_number(&self.as_slice()[molecule::NUMBER_SIZE..]) as usize / 4) - 1
+        }
+    }
+    pub fn count_extra_fields(&self) -> usize {
+        self.field_count() - Self::FIELD_COUNT
+    }
+    pub fn has_extra_fields(&self) -> bool {
+        Self::FIELD_COUNT != self.field_count()
+    }
+    pub fn script_hash(&self) -> Byte32Reader<'r> {
+        let slice = self.as_slice();
+        let start = molecule::unpack_number(&slice[4..]) as usize;
+        let end = molecule::unpack_number(&slice[8..]) as usize;
+        Byte32Reader::new_unchecked(&self.as_slice()[start..end])
+    }
+    pub fn seal(&self) -> BytesReader<'r> {
+        let slice = self.as_slice();
+        let start = molecule::unpack_number(&slice[8..]) as usize;
+        if self.has_extra_fields() {
+            let end = molecule::unpack_number(&slice[12..]) as usize;
+            BytesReader::new_unchecked(&self.as_slice()[start..end])
+        } else {
+            BytesReader::new_unchecked(&self.as_slice()[start..])
+        }
+    }
+}
+impl<'r> molecule::prelude::Reader<'r> for SealPairReader<'r> {
+    type Entity = SealPair;
+    const NAME: &'static str = "SealPairReader";
+    fn to_entity(&self) -> Self::Entity {
+        Self::Entity::new_unchecked(self.as_slice().to_owned().into())
+    }
+    fn new_unchecked(slice: &'r [u8]) -> Self {
+        SealPairReader(slice)
+    }
+    fn as_slice(&self) -> &'r [u8] {
+        self.0
+    }
+    fn verify(slice: &[u8], compatible: bool) -> molecule::error::VerificationResult<()> {
+        use molecule::verification_error as ve;
+        let slice_len = slice.len();
+        if slice_len < molecule::NUMBER_SIZE {
+            return ve!(Self, HeaderIsBroken, molecule::NUMBER_SIZE, slice_len);
+        }
+        let total_size = molecule::unpack_number(slice) as usize;
+        if slice_len != total_size {
+            return ve!(Self, TotalSizeNotMatch, total_size, slice_len);
+        }
+        if slice_len < molecule::NUMBER_SIZE * 2 {
+            return ve!(Self, HeaderIsBroken, molecule::NUMBER_SIZE * 2, slice_len);
+        }
+        let offset_first = molecule::unpack_number(&slice[molecule::NUMBER_SIZE..]) as usize;
+        if offset_first % molecule::NUMBER_SIZE != 0 || offset_first < molecule::NUMBER_SIZE * 2 {
+            return ve!(Self, OffsetsNotMatch);
+        }
+        if slice_len < offset_first {
+            return ve!(Self, HeaderIsBroken, offset_first, slice_len);
+        }
+        let field_count = offset_first / molecule::NUMBER_SIZE - 1;
+        if field_count < Self::FIELD_COUNT {
+            return ve!(Self, FieldCountNotMatch, Self::FIELD_COUNT, field_count);
+        } else if !compatible && field_count > Self::FIELD_COUNT {
+            return ve!(Self, FieldCountNotMatch, Self::FIELD_COUNT, field_count);
+        };
+        let mut offsets: Vec<usize> = slice[molecule::NUMBER_SIZE..offset_first]
+            .chunks_exact(molecule::NUMBER_SIZE)
+            .map(|x| molecule::unpack_number(x) as usize)
+            .collect();
+        offsets.push(total_size);
+        if offsets.windows(2).any(|i| i[0] > i[1]) {
+            return ve!(Self, OffsetsNotMatch);
+        }
+        Byte32Reader::verify(&slice[offsets[0]..offsets[1]], compatible)?;
+        BytesReader::verify(&slice[offsets[1]..offsets[2]], compatible)?;
+        Ok(())
+    }
+}
+#[derive(Debug, Default)]
+pub struct SealPairBuilder {
+    pub(crate) script_hash: Byte32,
+    pub(crate) seal: Bytes,
+}
+impl SealPairBuilder {
+    pub const FIELD_COUNT: usize = 2;
+    pub fn script_hash(mut self, v: Byte32) -> Self {
+        self.script_hash = v;
+        self
+    }
+    pub fn seal(mut self, v: Bytes) -> Self {
+        self.seal = v;
+        self
+    }
+}
+impl molecule::prelude::Builder for SealPairBuilder {
+    type Entity = SealPair;
+    const NAME: &'static str = "SealPairBuilder";
+    fn expected_length(&self) -> usize {
+        molecule::NUMBER_SIZE * (Self::FIELD_COUNT + 1)
+            + self.script_hash.as_slice().len()
+            + self.seal.as_slice().len()
+    }
+    fn write<W: molecule::io::Write>(&self, writer: &mut W) -> molecule::io::Result<()> {
+        let mut total_size = molecule::NUMBER_SIZE * (Self::FIELD_COUNT + 1);
+        let mut offsets = Vec::with_capacity(Self::FIELD_COUNT);
+        offsets.push(total_size);
+        total_size += self.script_hash.as_slice().len();
+        offsets.push(total_size);
+        total_size += self.seal.as_slice().len();
+        writer.write_all(&molecule::pack_number(total_size as molecule::Number))?;
+        for offset in offsets.into_iter() {
+            writer.write_all(&molecule::pack_number(offset as molecule::Number))?;
+        }
+        writer.write_all(self.script_hash.as_slice())?;
+        writer.write_all(self.seal.as_slice())?;
+        Ok(())
+    }
+    fn build(&self) -> Self::Entity {
+        let mut inner = Vec::with_capacity(self.expected_length());
+        self.write(&mut inner)
+            .unwrap_or_else(|_| panic!("{} build should be ok", Self::NAME));
+        SealPair::new_unchecked(inner.into())
+    }
+}
+#[derive(Clone)]
+pub struct SealPairVec(molecule::bytes::Bytes);
+impl ::core::fmt::LowerHex for SealPairVec {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        use molecule::hex_string;
+        if f.alternate() {
+            write!(f, "0x")?;
+        }
+        write!(f, "{}", hex_string(self.as_slice()))
+    }
+}
+impl ::core::fmt::Debug for SealPairVec {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{}({:#x})", Self::NAME, self)
+    }
+}
+impl ::core::fmt::Display for SealPairVec {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{} [", Self::NAME)?;
+        for i in 0..self.len() {
+            if i == 0 {
+                write!(f, "{}", self.get_unchecked(i))?;
+            } else {
+                write!(f, ", {}", self.get_unchecked(i))?;
+            }
+        }
+        write!(f, "]")
+    }
+}
+impl ::core::default::Default for SealPairVec {
+    fn default() -> Self {
+        let v = molecule::bytes::Bytes::from_static(&Self::DEFAULT_VALUE);
+        SealPairVec::new_unchecked(v)
+    }
+}
+impl SealPairVec {
+    const DEFAULT_VALUE: [u8; 4] = [4, 0, 0, 0];
+    pub fn total_size(&self) -> usize {
+        molecule::unpack_number(self.as_slice()) as usize
+    }
+    pub fn item_count(&self) -> usize {
+        if self.total_size() == molecule::NUMBER_SIZE {
+            0
+        } else {
+            (molecule::unpack_number(&self.as_slice()[molecule::NUMBER_SIZE..]) as usize / 4) - 1
+        }
+    }
+    pub fn len(&self) -> usize {
+        self.item_count()
+    }
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+    pub fn get(&self, idx: usize) -> Option<SealPair> {
+        if idx >= self.len() {
+            None
+        } else {
+            Some(self.get_unchecked(idx))
+        }
+    }
+    pub fn get_unchecked(&self, idx: usize) -> SealPair {
+        let slice = self.as_slice();
+        let start_idx = molecule::NUMBER_SIZE * (1 + idx);
+        let start = molecule::unpack_number(&slice[start_idx..]) as usize;
+        if idx == self.len() - 1 {
+            SealPair::new_unchecked(self.0.slice(start..))
+        } else {
+            let end_idx = start_idx + molecule::NUMBER_SIZE;
+            let end = molecule::unpack_number(&slice[end_idx..]) as usize;
+            SealPair::new_unchecked(self.0.slice(start..end))
+        }
+    }
+    pub fn as_reader<'r>(&'r self) -> SealPairVecReader<'r> {
+        SealPairVecReader::new_unchecked(self.as_slice())
+    }
+}
+impl molecule::prelude::Entity for SealPairVec {
+    type Builder = SealPairVecBuilder;
+    const NAME: &'static str = "SealPairVec";
+    fn new_unchecked(data: molecule::bytes::Bytes) -> Self {
+        SealPairVec(data)
+    }
+    fn as_bytes(&self) -> molecule::bytes::Bytes {
+        self.0.clone()
+    }
+    fn as_slice(&self) -> &[u8] {
+        &self.0[..]
+    }
+    fn from_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
+        SealPairVecReader::from_slice(slice).map(|reader| reader.to_entity())
+    }
+    fn from_compatible_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
+        SealPairVecReader::from_compatible_slice(slice).map(|reader| reader.to_entity())
+    }
+    fn new_builder() -> Self::Builder {
+        ::core::default::Default::default()
+    }
+    fn as_builder(self) -> Self::Builder {
+        Self::new_builder().extend(self.into_iter())
+    }
+}
+#[derive(Clone, Copy)]
+pub struct SealPairVecReader<'r>(&'r [u8]);
+impl<'r> ::core::fmt::LowerHex for SealPairVecReader<'r> {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        use molecule::hex_string;
+        if f.alternate() {
+            write!(f, "0x")?;
+        }
+        write!(f, "{}", hex_string(self.as_slice()))
+    }
+}
+impl<'r> ::core::fmt::Debug for SealPairVecReader<'r> {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{}({:#x})", Self::NAME, self)
+    }
+}
+impl<'r> ::core::fmt::Display for SealPairVecReader<'r> {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{} [", Self::NAME)?;
+        for i in 0..self.len() {
+            if i == 0 {
+                write!(f, "{}", self.get_unchecked(i))?;
+            } else {
+                write!(f, ", {}", self.get_unchecked(i))?;
+            }
+        }
+        write!(f, "]")
+    }
+}
+impl<'r> SealPairVecReader<'r> {
+    pub fn total_size(&self) -> usize {
+        molecule::unpack_number(self.as_slice()) as usize
+    }
+    pub fn item_count(&self) -> usize {
+        if self.total_size() == molecule::NUMBER_SIZE {
+            0
+        } else {
+            (molecule::unpack_number(&self.as_slice()[molecule::NUMBER_SIZE..]) as usize / 4) - 1
+        }
+    }
+    pub fn len(&self) -> usize {
+        self.item_count()
+    }
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+    pub fn get(&self, idx: usize) -> Option<SealPairReader<'r>> {
+        if idx >= self.len() {
+            None
+        } else {
+            Some(self.get_unchecked(idx))
+        }
+    }
+    pub fn get_unchecked(&self, idx: usize) -> SealPairReader<'r> {
+        let slice = self.as_slice();
+        let start_idx = molecule::NUMBER_SIZE * (1 + idx);
+        let start = molecule::unpack_number(&slice[start_idx..]) as usize;
+        if idx == self.len() - 1 {
+            SealPairReader::new_unchecked(&self.as_slice()[start..])
+        } else {
+            let end_idx = start_idx + molecule::NUMBER_SIZE;
+            let end = molecule::unpack_number(&slice[end_idx..]) as usize;
+            SealPairReader::new_unchecked(&self.as_slice()[start..end])
+        }
+    }
+}
+impl<'r> molecule::prelude::Reader<'r> for SealPairVecReader<'r> {
+    type Entity = SealPairVec;
+    const NAME: &'static str = "SealPairVecReader";
+    fn to_entity(&self) -> Self::Entity {
+        Self::Entity::new_unchecked(self.as_slice().to_owned().into())
+    }
+    fn new_unchecked(slice: &'r [u8]) -> Self {
+        SealPairVecReader(slice)
+    }
+    fn as_slice(&self) -> &'r [u8] {
+        self.0
+    }
+    fn verify(slice: &[u8], compatible: bool) -> molecule::error::VerificationResult<()> {
+        use molecule::verification_error as ve;
+        let slice_len = slice.len();
+        if slice_len < molecule::NUMBER_SIZE {
+            return ve!(Self, HeaderIsBroken, molecule::NUMBER_SIZE, slice_len);
+        }
+        let total_size = molecule::unpack_number(slice) as usize;
+        if slice_len != total_size {
+            return ve!(Self, TotalSizeNotMatch, total_size, slice_len);
+        }
+        if slice_len == molecule::NUMBER_SIZE {
+            return Ok(());
+        }
+        if slice_len < molecule::NUMBER_SIZE * 2 {
+            return ve!(
+                Self,
+                TotalSizeNotMatch,
+                molecule::NUMBER_SIZE * 2,
+                slice_len
+            );
+        }
+        let offset_first = molecule::unpack_number(&slice[molecule::NUMBER_SIZE..]) as usize;
+        if offset_first % molecule::NUMBER_SIZE != 0 || offset_first < molecule::NUMBER_SIZE * 2 {
+            return ve!(Self, OffsetsNotMatch);
+        }
+        if slice_len < offset_first {
+            return ve!(Self, HeaderIsBroken, offset_first, slice_len);
+        }
+        let mut offsets: Vec<usize> = slice[molecule::NUMBER_SIZE..offset_first]
+            .chunks_exact(molecule::NUMBER_SIZE)
+            .map(|x| molecule::unpack_number(x) as usize)
+            .collect();
+        offsets.push(total_size);
+        if offsets.windows(2).any(|i| i[0] > i[1]) {
+            return ve!(Self, OffsetsNotMatch);
+        }
+        for pair in offsets.windows(2) {
+            let start = pair[0];
+            let end = pair[1];
+            SealPairReader::verify(&slice[start..end], compatible)?;
+        }
+        Ok(())
+    }
+}
+#[derive(Debug, Default)]
+pub struct SealPairVecBuilder(pub(crate) Vec<SealPair>);
+impl SealPairVecBuilder {
+    pub fn set(mut self, v: Vec<SealPair>) -> Self {
+        self.0 = v;
+        self
+    }
+    pub fn push(mut self, v: SealPair) -> Self {
+        self.0.push(v);
+        self
+    }
+    pub fn extend<T: ::core::iter::IntoIterator<Item = SealPair>>(mut self, iter: T) -> Self {
+        for elem in iter {
+            self.0.push(elem);
+        }
+        self
+    }
+    pub fn replace(&mut self, index: usize, v: SealPair) -> Option<SealPair> {
+        self.0
+            .get_mut(index)
+            .map(|item| ::core::mem::replace(item, v))
+    }
+}
+impl molecule::prelude::Builder for SealPairVecBuilder {
+    type Entity = SealPairVec;
+    const NAME: &'static str = "SealPairVecBuilder";
+    fn expected_length(&self) -> usize {
+        molecule::NUMBER_SIZE * (self.0.len() + 1)
+            + self
+                .0
+                .iter()
+                .map(|inner| inner.as_slice().len())
+                .sum::<usize>()
+    }
+    fn write<W: molecule::io::Write>(&self, writer: &mut W) -> molecule::io::Result<()> {
+        let item_count = self.0.len();
+        if item_count == 0 {
+            writer.write_all(&molecule::pack_number(
+                molecule::NUMBER_SIZE as molecule::Number,
+            ))?;
+        } else {
+            let (total_size, offsets) = self.0.iter().fold(
+                (
+                    molecule::NUMBER_SIZE * (item_count + 1),
+                    Vec::with_capacity(item_count),
+                ),
+                |(start, mut offsets), inner| {
+                    offsets.push(start);
+                    (start + inner.as_slice().len(), offsets)
+                },
+            );
+            writer.write_all(&molecule::pack_number(total_size as molecule::Number))?;
+            for offset in offsets.into_iter() {
+                writer.write_all(&molecule::pack_number(offset as molecule::Number))?;
+            }
+            for inner in self.0.iter() {
+                writer.write_all(inner.as_slice())?;
+            }
+        }
+        Ok(())
+    }
+    fn build(&self) -> Self::Entity {
+        let mut inner = Vec::with_capacity(self.expected_length());
+        self.write(&mut inner)
+            .unwrap_or_else(|_| panic!("{} build should be ok", Self::NAME));
+        SealPairVec::new_unchecked(inner.into())
+    }
+}
+pub struct SealPairVecIterator(SealPairVec, usize, usize);
+impl ::core::iter::Iterator for SealPairVecIterator {
+    type Item = SealPair;
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.1 >= self.2 {
+            None
+        } else {
+            let ret = self.0.get_unchecked(self.1);
+            self.1 += 1;
+            Some(ret)
+        }
+    }
+}
+impl ::core::iter::ExactSizeIterator for SealPairVecIterator {
+    fn len(&self) -> usize {
+        self.2 - self.1
+    }
+}
+impl ::core::iter::IntoIterator for SealPairVec {
+    type Item = SealPair;
+    type IntoIter = SealPairVecIterator;
+    fn into_iter(self) -> Self::IntoIter {
+        let len = self.len();
+        SealPairVecIterator(self, 0, len)
+    }
+}
+impl<'r> SealPairVecReader<'r> {
+    pub fn iter<'t>(&'t self) -> SealPairVecReaderIterator<'t, 'r> {
+        SealPairVecReaderIterator(&self, 0, self.len())
+    }
+}
+pub struct SealPairVecReaderIterator<'t, 'r>(&'t SealPairVecReader<'r>, usize, usize);
+impl<'t: 'r, 'r> ::core::iter::Iterator for SealPairVecReaderIterator<'t, 'r> {
+    type Item = SealPairReader<'t>;
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.1 >= self.2 {
+            None
+        } else {
+            let ret = self.0.get_unchecked(self.1);
+            self.1 += 1;
+            Some(ret)
+        }
+    }
+}
+impl<'t: 'r, 'r> ::core::iter::ExactSizeIterator for SealPairVecReaderIterator<'t, 'r> {
+    fn len(&self) -> usize {
+        self.2 - self.1
     }
 }
 #[derive(Clone)]
@@ -4250,12 +4853,12 @@ impl ::core::fmt::Debug for Otx {
 impl ::core::fmt::Display for Otx {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "{} {{ ", Self::NAME)?;
-        write!(f, "{}: {}", "lock", self.lock())?;
-        write!(f, ", {}: {}", "input_cells", self.input_cells())?;
+        write!(f, "{}: {}", "input_cells", self.input_cells())?;
         write!(f, ", {}: {}", "output_cells", self.output_cells())?;
         write!(f, ", {}: {}", "cell_deps", self.cell_deps())?;
         write!(f, ", {}: {}", "header_deps", self.header_deps())?;
         write!(f, ", {}: {}", "message", self.message())?;
+        write!(f, ", {}: {}", "seals", self.seals())?;
         let extra_count = self.count_extra_fields();
         if extra_count != 0 {
             write!(f, ", .. ({} fields)", extra_count)?;
@@ -4271,8 +4874,8 @@ impl ::core::default::Default for Otx {
 }
 impl Otx {
     const DEFAULT_VALUE: [u8; 60] = [
-        60, 0, 0, 0, 28, 0, 0, 0, 32, 0, 0, 0, 36, 0, 0, 0, 40, 0, 0, 0, 44, 0, 0, 0, 48, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 0, 0, 0, 8, 0, 0, 0, 4, 0,
+        60, 0, 0, 0, 28, 0, 0, 0, 32, 0, 0, 0, 36, 0, 0, 0, 40, 0, 0, 0, 44, 0, 0, 0, 56, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 0, 0, 0, 8, 0, 0, 0, 4, 0, 0, 0, 4, 0,
         0, 0,
     ];
     pub const FIELD_COUNT: usize = 6;
@@ -4292,44 +4895,44 @@ impl Otx {
     pub fn has_extra_fields(&self) -> bool {
         Self::FIELD_COUNT != self.field_count()
     }
-    pub fn lock(&self) -> Bytes {
+    pub fn input_cells(&self) -> Uint32 {
         let slice = self.as_slice();
         let start = molecule::unpack_number(&slice[4..]) as usize;
         let end = molecule::unpack_number(&slice[8..]) as usize;
-        Bytes::new_unchecked(self.0.slice(start..end))
+        Uint32::new_unchecked(self.0.slice(start..end))
     }
-    pub fn input_cells(&self) -> Uint32 {
+    pub fn output_cells(&self) -> Uint32 {
         let slice = self.as_slice();
         let start = molecule::unpack_number(&slice[8..]) as usize;
         let end = molecule::unpack_number(&slice[12..]) as usize;
         Uint32::new_unchecked(self.0.slice(start..end))
     }
-    pub fn output_cells(&self) -> Uint32 {
+    pub fn cell_deps(&self) -> Uint32 {
         let slice = self.as_slice();
         let start = molecule::unpack_number(&slice[12..]) as usize;
         let end = molecule::unpack_number(&slice[16..]) as usize;
         Uint32::new_unchecked(self.0.slice(start..end))
     }
-    pub fn cell_deps(&self) -> Uint32 {
+    pub fn header_deps(&self) -> Uint32 {
         let slice = self.as_slice();
         let start = molecule::unpack_number(&slice[16..]) as usize;
         let end = molecule::unpack_number(&slice[20..]) as usize;
         Uint32::new_unchecked(self.0.slice(start..end))
     }
-    pub fn header_deps(&self) -> Uint32 {
+    pub fn message(&self) -> Message {
         let slice = self.as_slice();
         let start = molecule::unpack_number(&slice[20..]) as usize;
         let end = molecule::unpack_number(&slice[24..]) as usize;
-        Uint32::new_unchecked(self.0.slice(start..end))
+        Message::new_unchecked(self.0.slice(start..end))
     }
-    pub fn message(&self) -> Message {
+    pub fn seals(&self) -> SealPairVec {
         let slice = self.as_slice();
         let start = molecule::unpack_number(&slice[24..]) as usize;
         if self.has_extra_fields() {
             let end = molecule::unpack_number(&slice[28..]) as usize;
-            Message::new_unchecked(self.0.slice(start..end))
+            SealPairVec::new_unchecked(self.0.slice(start..end))
         } else {
-            Message::new_unchecked(self.0.slice(start..))
+            SealPairVec::new_unchecked(self.0.slice(start..))
         }
     }
     pub fn as_reader<'r>(&'r self) -> OtxReader<'r> {
@@ -4359,12 +4962,12 @@ impl molecule::prelude::Entity for Otx {
     }
     fn as_builder(self) -> Self::Builder {
         Self::new_builder()
-            .lock(self.lock())
             .input_cells(self.input_cells())
             .output_cells(self.output_cells())
             .cell_deps(self.cell_deps())
             .header_deps(self.header_deps())
             .message(self.message())
+            .seals(self.seals())
     }
 }
 #[derive(Clone, Copy)]
@@ -4386,12 +4989,12 @@ impl<'r> ::core::fmt::Debug for OtxReader<'r> {
 impl<'r> ::core::fmt::Display for OtxReader<'r> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "{} {{ ", Self::NAME)?;
-        write!(f, "{}: {}", "lock", self.lock())?;
-        write!(f, ", {}: {}", "input_cells", self.input_cells())?;
+        write!(f, "{}: {}", "input_cells", self.input_cells())?;
         write!(f, ", {}: {}", "output_cells", self.output_cells())?;
         write!(f, ", {}: {}", "cell_deps", self.cell_deps())?;
         write!(f, ", {}: {}", "header_deps", self.header_deps())?;
         write!(f, ", {}: {}", "message", self.message())?;
+        write!(f, ", {}: {}", "seals", self.seals())?;
         let extra_count = self.count_extra_fields();
         if extra_count != 0 {
             write!(f, ", .. ({} fields)", extra_count)?;
@@ -4417,44 +5020,44 @@ impl<'r> OtxReader<'r> {
     pub fn has_extra_fields(&self) -> bool {
         Self::FIELD_COUNT != self.field_count()
     }
-    pub fn lock(&self) -> BytesReader<'r> {
+    pub fn input_cells(&self) -> Uint32Reader<'r> {
         let slice = self.as_slice();
         let start = molecule::unpack_number(&slice[4..]) as usize;
         let end = molecule::unpack_number(&slice[8..]) as usize;
-        BytesReader::new_unchecked(&self.as_slice()[start..end])
+        Uint32Reader::new_unchecked(&self.as_slice()[start..end])
     }
-    pub fn input_cells(&self) -> Uint32Reader<'r> {
+    pub fn output_cells(&self) -> Uint32Reader<'r> {
         let slice = self.as_slice();
         let start = molecule::unpack_number(&slice[8..]) as usize;
         let end = molecule::unpack_number(&slice[12..]) as usize;
         Uint32Reader::new_unchecked(&self.as_slice()[start..end])
     }
-    pub fn output_cells(&self) -> Uint32Reader<'r> {
+    pub fn cell_deps(&self) -> Uint32Reader<'r> {
         let slice = self.as_slice();
         let start = molecule::unpack_number(&slice[12..]) as usize;
         let end = molecule::unpack_number(&slice[16..]) as usize;
         Uint32Reader::new_unchecked(&self.as_slice()[start..end])
     }
-    pub fn cell_deps(&self) -> Uint32Reader<'r> {
+    pub fn header_deps(&self) -> Uint32Reader<'r> {
         let slice = self.as_slice();
         let start = molecule::unpack_number(&slice[16..]) as usize;
         let end = molecule::unpack_number(&slice[20..]) as usize;
         Uint32Reader::new_unchecked(&self.as_slice()[start..end])
     }
-    pub fn header_deps(&self) -> Uint32Reader<'r> {
+    pub fn message(&self) -> MessageReader<'r> {
         let slice = self.as_slice();
         let start = molecule::unpack_number(&slice[20..]) as usize;
         let end = molecule::unpack_number(&slice[24..]) as usize;
-        Uint32Reader::new_unchecked(&self.as_slice()[start..end])
+        MessageReader::new_unchecked(&self.as_slice()[start..end])
     }
-    pub fn message(&self) -> MessageReader<'r> {
+    pub fn seals(&self) -> SealPairVecReader<'r> {
         let slice = self.as_slice();
         let start = molecule::unpack_number(&slice[24..]) as usize;
         if self.has_extra_fields() {
             let end = molecule::unpack_number(&slice[28..]) as usize;
-            MessageReader::new_unchecked(&self.as_slice()[start..end])
+            SealPairVecReader::new_unchecked(&self.as_slice()[start..end])
         } else {
-            MessageReader::new_unchecked(&self.as_slice()[start..])
+            SealPairVecReader::new_unchecked(&self.as_slice()[start..])
         }
     }
 }
@@ -4504,30 +5107,26 @@ impl<'r> molecule::prelude::Reader<'r> for OtxReader<'r> {
         if offsets.windows(2).any(|i| i[0] > i[1]) {
             return ve!(Self, OffsetsNotMatch);
         }
-        BytesReader::verify(&slice[offsets[0]..offsets[1]], compatible)?;
+        Uint32Reader::verify(&slice[offsets[0]..offsets[1]], compatible)?;
         Uint32Reader::verify(&slice[offsets[1]..offsets[2]], compatible)?;
         Uint32Reader::verify(&slice[offsets[2]..offsets[3]], compatible)?;
         Uint32Reader::verify(&slice[offsets[3]..offsets[4]], compatible)?;
-        Uint32Reader::verify(&slice[offsets[4]..offsets[5]], compatible)?;
-        MessageReader::verify(&slice[offsets[5]..offsets[6]], compatible)?;
+        MessageReader::verify(&slice[offsets[4]..offsets[5]], compatible)?;
+        SealPairVecReader::verify(&slice[offsets[5]..offsets[6]], compatible)?;
         Ok(())
     }
 }
 #[derive(Debug, Default)]
 pub struct OtxBuilder {
-    pub(crate) lock: Bytes,
     pub(crate) input_cells: Uint32,
     pub(crate) output_cells: Uint32,
     pub(crate) cell_deps: Uint32,
     pub(crate) header_deps: Uint32,
     pub(crate) message: Message,
+    pub(crate) seals: SealPairVec,
 }
 impl OtxBuilder {
     pub const FIELD_COUNT: usize = 6;
-    pub fn lock(mut self, v: Bytes) -> Self {
-        self.lock = v;
-        self
-    }
     pub fn input_cells(mut self, v: Uint32) -> Self {
         self.input_cells = v;
         self
@@ -4548,24 +5147,26 @@ impl OtxBuilder {
         self.message = v;
         self
     }
+    pub fn seals(mut self, v: SealPairVec) -> Self {
+        self.seals = v;
+        self
+    }
 }
 impl molecule::prelude::Builder for OtxBuilder {
     type Entity = Otx;
     const NAME: &'static str = "OtxBuilder";
     fn expected_length(&self) -> usize {
         molecule::NUMBER_SIZE * (Self::FIELD_COUNT + 1)
-            + self.lock.as_slice().len()
             + self.input_cells.as_slice().len()
             + self.output_cells.as_slice().len()
             + self.cell_deps.as_slice().len()
             + self.header_deps.as_slice().len()
             + self.message.as_slice().len()
+            + self.seals.as_slice().len()
     }
     fn write<W: molecule::io::Write>(&self, writer: &mut W) -> molecule::io::Result<()> {
         let mut total_size = molecule::NUMBER_SIZE * (Self::FIELD_COUNT + 1);
         let mut offsets = Vec::with_capacity(Self::FIELD_COUNT);
-        offsets.push(total_size);
-        total_size += self.lock.as_slice().len();
         offsets.push(total_size);
         total_size += self.input_cells.as_slice().len();
         offsets.push(total_size);
@@ -4576,16 +5177,18 @@ impl molecule::prelude::Builder for OtxBuilder {
         total_size += self.header_deps.as_slice().len();
         offsets.push(total_size);
         total_size += self.message.as_slice().len();
+        offsets.push(total_size);
+        total_size += self.seals.as_slice().len();
         writer.write_all(&molecule::pack_number(total_size as molecule::Number))?;
         for offset in offsets.into_iter() {
             writer.write_all(&molecule::pack_number(offset as molecule::Number))?;
         }
-        writer.write_all(self.lock.as_slice())?;
         writer.write_all(self.input_cells.as_slice())?;
         writer.write_all(self.output_cells.as_slice())?;
         writer.write_all(self.cell_deps.as_slice())?;
         writer.write_all(self.header_deps.as_slice())?;
         writer.write_all(self.message.as_slice())?;
+        writer.write_all(self.seals.as_slice())?;
         Ok(())
     }
     fn build(&self) -> Self::Entity {
