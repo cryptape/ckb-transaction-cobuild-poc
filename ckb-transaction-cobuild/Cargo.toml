@@ -7,6 +7,6 @@ edition = "2021"
 
 [dependencies]
 blake2b-ref = "0.3.1"
-ckb-std = { version = "0.14.3", default-features = false }
+ckb-std = { version = "0.14.3", default-features = false,  features = ["ckb-types"] }
 molecule = { version = "0.7.5", default-features = false }
 ckb-gen-types = { version = "0.111.0", default-features = false }
