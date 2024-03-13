@@ -2,7 +2,7 @@ use ckb_std::{
     ckb_types::{bytes::Bytes, core::ScriptHashType, prelude::*},
     high_level::load_script,
 };
-use ckb_transaction_cobuild::parse_message;
+use ckb_transaction_cobuild::{cobuild_entry, Callback};
 use core::result::Result;
 
 use crate::error::Error;
@@ -16,31 +16,55 @@ const AUTH_CODE_HASH: [u8; 32] = [
     0xd4, 0x50, 0x43, 0xff, 0x70, 0x1d, 0x64, 0x55, 0xa0, 0x3a, 0xbd, 0xab, 0xca, 0xd9, 0x9e, 0x3e,
 ];
 
+struct Verifier {
+    entry: CkbEntryType,
+    id: CkbAuthType,
+}
+
+impl Verifier {
+    pub fn new(entry: CkbEntryType, id: CkbAuthType) -> Self {
+        Self { entry, id }
+    }
+}
+
+impl Callback for Verifier {
+    fn invoke(
+        &self,
+        seal: &[u8],
+        signing_message_hash: &[u8; 32],
+    ) -> Result<(), ckb_transaction_cobuild::error::Error> {
+        ckb_auth(&self.entry, &self.id, seal, signing_message_hash)
+            .map_err(|_| ckb_transaction_cobuild::error::Error::AuthError)?;
+        Ok(())
+    }
+}
+
 pub fn main() -> Result<(), Error> {
-    if let Ok((message_digest, seal)) = parse_message() {
-        let mut pubkey_hash = [0u8; 20];
-        let script = load_script()?;
-        let args: Bytes = script.args().unpack();
-        pubkey_hash.copy_from_slice(&args[0..20]);
+    let mut pubkey_hash = [0u8; 20];
+    let script = load_script()?;
+    let args: Bytes = script.args().unpack();
+    pubkey_hash.copy_from_slice(&args[0..20]);
 
-        let id = CkbAuthType {
-            algorithm_id: AuthAlgorithmIdType::Ckb,
-            pubkey_hash,
-        };
+    let id = CkbAuthType {
+        algorithm_id: AuthAlgorithmIdType::Ckb,
+        pubkey_hash,
+    };
 
-        let entry = CkbEntryType {
-            code_hash: AUTH_CODE_HASH,
-            hash_type: ScriptHashType::Data1,
-            entry_category: EntryCategoryType::DynamicLinking,
-        };
+    let entry = CkbEntryType {
+        code_hash: AUTH_CODE_HASH,
+        hash_type: ScriptHashType::Data1,
+        entry_category: EntryCategoryType::DynamicLinking,
+    };
 
-        ckb_auth(&entry, &id, &seal, &message_digest).map_err(|_| Error::AuthError)?;
+    let verifier = Verifier::new(entry, id);
+    let cobuild_activated = cobuild_entry(verifier)?;
 
+    if cobuild_activated {
+        // cobuild is activated. Every thing is done in `cobuild_entry`. Returns immediately.
         Ok(())
     } else {
-        // In this routine, it indicates that the WitnessLayout is not being
-        // used. It is possible that the traditional WitnessArgs is being used.
-        // The previous code can be copied and pasted here.
+        // put your original non-cobuild code here
+        // blah, blah, blah, ...
         Ok(())
     }
 }

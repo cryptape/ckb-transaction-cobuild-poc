@@ -19,3 +19,7 @@ template_type = "Rust"
 [[contracts]]
 name = "transaction-cobuild-otx-lock-demo"
 template_type = "Rust"
+
+[[contracts]]
+name = "always-success"
+template_type = "Rust"

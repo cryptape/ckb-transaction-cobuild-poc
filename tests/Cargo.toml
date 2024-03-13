@@ -11,3 +11,10 @@ ckb-testtool = "0.10"
 ckb-auth-rs = { git = "https://github.com/nervosnetwork/ckb-auth.git", rev="df6e9ef"}
 rand = "0.6.5"
 molecule = { version = "0.7.5", default-features = false }
+
+hex = "0.4.3"
+serde_json = "1.0.114"
+lazy_static = "1.4.0"
+
+[patch.crates-io]
+molecule = { git = "https://github.com/XuJiandong/molecule.git", rev = "785a309" }

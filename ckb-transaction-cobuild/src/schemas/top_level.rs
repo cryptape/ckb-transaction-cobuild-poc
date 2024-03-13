@@ -148,7 +148,7 @@ impl<'r> molecule::prelude::Reader<'r> for WitnessLayoutReader<'r> {
         Ok(())
     }
 }
-#[derive(Debug, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct WitnessLayoutBuilder(pub(crate) WitnessLayoutUnion);
 impl WitnessLayoutBuilder {
     pub const ITEMS_COUNT: usize = 4;
@@ -360,5 +360,25 @@ impl<'r> WitnessLayoutUnionReader<'r> {
             WitnessLayoutUnionReader::Otx(_) => "Otx",
             WitnessLayoutUnionReader::OtxStart(_) => "OtxStart",
         }
+    }
+}
+impl From<SighashAll> for WitnessLayout {
+    fn from(value: SighashAll) -> Self {
+        Self::new_builder().set(value).build()
+    }
+}
+impl From<SighashAllOnly> for WitnessLayout {
+    fn from(value: SighashAllOnly) -> Self {
+        Self::new_builder().set(value).build()
+    }
+}
+impl From<Otx> for WitnessLayout {
+    fn from(value: Otx) -> Self {
+        Self::new_builder().set(value).build()
+    }
+}
+impl From<OtxStart> for WitnessLayout {
+    fn from(value: OtxStart) -> Self {
+        Self::new_builder().set(value).build()
     }
 }

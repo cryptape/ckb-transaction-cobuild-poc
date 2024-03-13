@@ -6,5 +6,5 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-ckb-transaction-cobuild = { path = "../../ckb-transaction-cobuild" }
+ckb-transaction-cobuild = { path = "../../ckb-transaction-cobuild", default-features = false, features = ["log"] }
 ckb-std = { version = "0.14.3" }

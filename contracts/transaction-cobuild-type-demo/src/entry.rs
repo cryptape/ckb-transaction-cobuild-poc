@@ -1,6 +1,6 @@
+use alloc::vec::Vec;
 use ckb_std::{
     ckb_constants::Source,
-    ckb_types::prelude::*,
     high_level::{load_cell_data, load_script_hash},
     syscalls::SysError,
 };
@@ -13,9 +13,13 @@ pub fn main() -> Result<(), Error> {
     // fetch the message field of SighashAll and verify it
     if let Ok(Some(message)) = fetch_message() {
         let script_hash = load_script_hash()?;
-        for action in message.actions().into_iter() {
-            if action.script_hash().as_slice() == script_hash.as_slice() {
-                if !verify_action_data(&action.data().raw_data())? {
+        for action in message.actions()?.into_iter() {
+            let hash = action.script_hash()?;
+            let hash: Vec<u8> = hash.try_into().unwrap();
+            if &hash == script_hash.as_slice() {
+                let data = action.data()?;
+                let data: Vec<u8> = data.try_into().unwrap();
+                if !verify_action_data(&data)? {
                     return Err(Error::InvalidMessage);
                 }
             }

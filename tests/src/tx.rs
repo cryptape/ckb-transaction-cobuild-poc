@@ -92,11 +92,11 @@ impl MessageData {
 
 pub struct MessageWitnesses {
     pub message_data: Vec<MessageData>,
-    pub others: Vec<WitnessLayout>,
+    pub others: Vec<Bytes>,
 }
 
 impl MessageWitnesses {
-    pub fn new(groups_size: Vec<usize>, others: Vec<WitnessLayout>) -> Self {
+    pub fn new(groups_size: Vec<usize>, others: Vec<Bytes>) -> Self {
         let mut message_data = Vec::new();
         for group_size in groups_size {
             message_data.push(MessageData::new(group_size));
@@ -143,7 +143,7 @@ impl MessageWitnesses {
         }
 
         for w in &self.others {
-            witnesses.push(w.as_bytes());
+            witnesses.push(w.clone());
         }
 
         witnesses
