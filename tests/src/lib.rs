@@ -9,6 +9,9 @@ pub mod tx;
 #[cfg(test)]
 mod tests;
 
+#[cfg(test)]
+mod test_otx;
+
 const TEST_ENV_VAR: &str = "CAPSULE_TEST_ENV";
 
 pub enum TestEnv {
@@ -65,7 +68,6 @@ impl Loader {
     pub fn load_binary(&self, name: &str) -> Bytes {
         let mut path = self.0.clone();
         path.push(name);
-        println!("path = {}", path.display());
         fs::read(path).expect("binary").into()
     }
 }

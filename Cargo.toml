@@ -1,6 +1,7 @@
 [workspace]
-members = ["ckb-transaction-cobuild", "contracts/transaction-cobuild-lock-demo", "contracts/transaction-cobuild-type-demo", "contracts/transaction-cobuild-otx-lock-demo"]
+members = ["ckb-transaction-cobuild", "contracts/transaction-cobuild-lock-demo", "contracts/transaction-cobuild-type-demo", "contracts/transaction-cobuild-otx-lock-demo", "contracts/always-success"]
 exclude = ["tests"]
+resolver = "2"
 
 [profile.release]
 overflow-checks = true
@@ -16,3 +17,6 @@ opt-level = 1
 debug = false
 panic = 'abort'
 debug-assertions = true
+
+[patch.crates-io]
+molecule = { git = "https://github.com/XuJiandong/molecule.git", rev = "785a309" }

@@ -1,4 +1,6 @@
 use ckb_std::error::SysError;
+use ckb_transaction_cobuild::error::Error as CobuildError;
+use ckb_transaction_cobuild::error::LazyReaderError;
 
 /// Error
 #[repr(i8)]
@@ -9,6 +11,8 @@ pub enum Error {
     Encoding,
     // Add customized errors here...
     InvalidMessage,
+    CobuildError,
+    LazyReaderError,
 }
 
 impl From<SysError> for Error {
@@ -21,5 +25,17 @@ impl From<SysError> for Error {
             Encoding => Self::Encoding,
             Unknown(err_code) => panic!("unexpected sys error {}", err_code),
         }
+    }
+}
+
+impl From<CobuildError> for Error {
+    fn from(_: CobuildError) -> Self {
+        Self::CobuildError
+    }
+}
+
+impl From<LazyReaderError> for Error {
+    fn from(_: LazyReaderError) -> Self {
+        Self::LazyReaderError
     }
 }

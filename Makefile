@@ -8,6 +8,13 @@ mol:
 	moleculec --language rust --schema-file schemas/top_level.mol > ckb-transaction-cobuild/src/schemas/top_level.rs
 	cargo fmt
 
+mol2:
+	moleculec --language rust-lazy-reader --schema-file schemas/basic.mol > ckb-transaction-cobuild/src/schemas2/basic.rs
+	moleculec --language rust-lazy-reader --schema-file schemas/top_level.mol > ckb-transaction-cobuild/src/schemas2/top_level.rs
+	moleculec --language rust-lazy-reader --schema-file schemas/blockchain.mol > ckb-transaction-cobuild/src/schemas2/blockchain.rs
+	cargo fmt
+
+
 install:
 	rustup target add riscv64imac-unknown-none-elf
 	cargo install cross --git https://github.com/cross-rs/cross
@@ -19,3 +26,7 @@ install:
 ci:
 	capsule build --release
 	cd tests && cargo test && cd ..
+
+debug:
+	capsule build --release
+	cd tests && RUST_LOG=debug cargo test -- --nocapture && cd ..

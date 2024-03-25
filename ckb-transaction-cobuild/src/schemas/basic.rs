@@ -348,6 +348,7 @@ impl<'r> molecule::prelude::Reader<'r> for HashReader<'r> {
         Ok(())
     }
 }
+#[derive(Clone)]
 pub struct HashBuilder(pub(crate) [Byte; 32]);
 impl ::core::fmt::Debug for HashBuilder {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
@@ -577,6 +578,87 @@ impl molecule::prelude::Builder for HashBuilder {
         Hash::new_unchecked(inner.into())
     }
 }
+impl From<[Byte; 32usize]> for Hash {
+    fn from(value: [Byte; 32usize]) -> Self {
+        Self::new_builder().set(value).build()
+    }
+}
+impl ::core::convert::TryFrom<&[Byte]> for Hash {
+    type Error = ::core::array::TryFromSliceError;
+    fn try_from(value: &[Byte]) -> Result<Self, ::core::array::TryFromSliceError> {
+        Ok(Self::new_builder()
+            .set(<&[Byte; 32usize]>::try_from(value)?.clone())
+            .build())
+    }
+}
+impl From<Hash> for [Byte; 32usize] {
+    #[track_caller]
+    fn from(value: Hash) -> Self {
+        [
+            value.nth0(),
+            value.nth1(),
+            value.nth2(),
+            value.nth3(),
+            value.nth4(),
+            value.nth5(),
+            value.nth6(),
+            value.nth7(),
+            value.nth8(),
+            value.nth9(),
+            value.nth10(),
+            value.nth11(),
+            value.nth12(),
+            value.nth13(),
+            value.nth14(),
+            value.nth15(),
+            value.nth16(),
+            value.nth17(),
+            value.nth18(),
+            value.nth19(),
+            value.nth20(),
+            value.nth21(),
+            value.nth22(),
+            value.nth23(),
+            value.nth24(),
+            value.nth25(),
+            value.nth26(),
+            value.nth27(),
+            value.nth28(),
+            value.nth29(),
+            value.nth30(),
+            value.nth31(),
+        ]
+    }
+}
+impl From<[u8; 32usize]> for Hash {
+    fn from(value: [u8; 32usize]) -> Self {
+        HashReader::new_unchecked(&value).to_entity()
+    }
+}
+impl ::core::convert::TryFrom<&[u8]> for Hash {
+    type Error = ::core::array::TryFromSliceError;
+    fn try_from(value: &[u8]) -> Result<Self, ::core::array::TryFromSliceError> {
+        Ok(<[u8; 32usize]>::try_from(value)?.into())
+    }
+}
+impl From<Hash> for [u8; 32usize] {
+    #[track_caller]
+    fn from(value: Hash) -> Self {
+        ::core::convert::TryFrom::try_from(value.as_slice()).unwrap()
+    }
+}
+impl<'a> From<HashReader<'a>> for &'a [u8; 32usize] {
+    #[track_caller]
+    fn from(value: HashReader<'a>) -> Self {
+        ::core::convert::TryFrom::try_from(value.as_slice()).unwrap()
+    }
+}
+impl<'a> From<&'a HashReader<'a>> for &'a [u8; 32usize] {
+    #[track_caller]
+    fn from(value: &'a HashReader<'a>) -> Self {
+        ::core::convert::TryFrom::try_from(value.as_slice()).unwrap()
+    }
+}
 #[derive(Clone)]
 pub struct String(molecule::bytes::Bytes);
 impl ::core::fmt::LowerHex for String {
@@ -750,7 +832,7 @@ impl<'r> molecule::prelude::Reader<'r> for StringReader<'r> {
         Ok(())
     }
 }
-#[derive(Debug, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct StringBuilder(pub(crate) Vec<Byte>);
 impl StringBuilder {
     pub const ITEM_SIZE: usize = 1;
@@ -818,6 +900,18 @@ impl ::core::iter::IntoIterator for String {
     fn into_iter(self) -> Self::IntoIter {
         let len = self.len();
         StringIterator(self, 0, len)
+    }
+}
+impl ::core::iter::FromIterator<Byte> for String {
+    fn from_iter<T: IntoIterator<Item = Byte>>(iter: T) -> Self {
+        Self::new_builder().extend(iter).build()
+    }
+}
+impl ::core::iter::FromIterator<u8> for String {
+    fn from_iter<T: IntoIterator<Item = u8>>(iter: T) -> Self {
+        Self::new_builder()
+            .extend(iter.into_iter().map(Into::into))
+            .build()
     }
 }
 #[derive(Clone)]
@@ -954,7 +1048,7 @@ impl<'r> molecule::prelude::Reader<'r> for Uint32OptReader<'r> {
         Ok(())
     }
 }
-#[derive(Debug, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct Uint32OptBuilder(pub(crate) Option<Uint32>);
 impl Uint32OptBuilder {
     pub fn set(mut self, v: Option<Uint32>) -> Self {
@@ -982,6 +1076,11 @@ impl molecule::prelude::Builder for Uint32OptBuilder {
         self.write(&mut inner)
             .unwrap_or_else(|_| panic!("{} build should be ok", Self::NAME));
         Uint32Opt::new_unchecked(inner.into())
+    }
+}
+impl From<Uint32> for Uint32Opt {
+    fn from(value: Uint32) -> Self {
+        Self::new_builder().set(Some(value)).build()
     }
 }
 #[derive(Clone)]
@@ -1218,7 +1317,7 @@ impl<'r> molecule::prelude::Reader<'r> for ActionReader<'r> {
         Ok(())
     }
 }
-#[derive(Debug, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct ActionBuilder {
     pub(crate) script_info_hash: Byte32,
     pub(crate) script_hash: Byte32,
@@ -1496,7 +1595,7 @@ impl<'r> molecule::prelude::Reader<'r> for ActionVecReader<'r> {
         Ok(())
     }
 }
-#[derive(Debug, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct ActionVecBuilder(pub(crate) Vec<Action>);
 impl ActionVecBuilder {
     pub fn set(mut self, v: Vec<Action>) -> Self {
@@ -1611,6 +1710,11 @@ impl<'t: 'r, 'r> ::core::iter::Iterator for ActionVecReaderIterator<'t, 'r> {
 impl<'t: 'r, 'r> ::core::iter::ExactSizeIterator for ActionVecReaderIterator<'t, 'r> {
     fn len(&self) -> usize {
         self.2 - self.1
+    }
+}
+impl ::core::iter::FromIterator<Action> for ActionVec {
+    fn from_iter<T: IntoIterator<Item = Action>>(iter: T) -> Self {
+        Self::new_builder().extend(iter).build()
     }
 }
 #[derive(Clone)]
@@ -1810,7 +1914,7 @@ impl<'r> molecule::prelude::Reader<'r> for MessageReader<'r> {
         Ok(())
     }
 }
-#[derive(Debug, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct MessageBuilder {
     pub(crate) actions: ActionVec,
 }
@@ -2112,7 +2216,7 @@ impl<'r> molecule::prelude::Reader<'r> for ScriptInfoReader<'r> {
         Ok(())
     }
 }
-#[derive(Debug, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct ScriptInfoBuilder {
     pub(crate) name: String,
     pub(crate) url: String,
@@ -2408,7 +2512,7 @@ impl<'r> molecule::prelude::Reader<'r> for ScriptInfoVecReader<'r> {
         Ok(())
     }
 }
-#[derive(Debug, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct ScriptInfoVecBuilder(pub(crate) Vec<ScriptInfo>);
 impl ScriptInfoVecBuilder {
     pub fn set(mut self, v: Vec<ScriptInfo>) -> Self {
@@ -2523,6 +2627,11 @@ impl<'t: 'r, 'r> ::core::iter::Iterator for ScriptInfoVecReaderIterator<'t, 'r> 
 impl<'t: 'r, 'r> ::core::iter::ExactSizeIterator for ScriptInfoVecReaderIterator<'t, 'r> {
     fn len(&self) -> usize {
         self.2 - self.1
+    }
+}
+impl ::core::iter::FromIterator<ScriptInfo> for ScriptInfoVec {
+    fn from_iter<T: IntoIterator<Item = ScriptInfo>>(iter: T) -> Self {
+        Self::new_builder().extend(iter).build()
     }
 }
 #[derive(Clone)]
@@ -2741,7 +2850,7 @@ impl<'r> molecule::prelude::Reader<'r> for ResolvedInputsReader<'r> {
         Ok(())
     }
 }
-#[derive(Debug, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct ResolvedInputsBuilder {
     pub(crate) outputs: CellOutputVec,
     pub(crate) outputs_data: BytesVec,
@@ -3071,7 +3180,7 @@ impl<'r> molecule::prelude::Reader<'r> for BuildingPacketV1Reader<'r> {
         Ok(())
     }
 }
-#[derive(Debug, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct BuildingPacketV1Builder {
     pub(crate) message: Message,
     pub(crate) payload: Transaction,
@@ -3293,7 +3402,7 @@ impl<'r> molecule::prelude::Reader<'r> for BuildingPacketReader<'r> {
         Ok(())
     }
 }
-#[derive(Debug, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct BuildingPacketBuilder(pub(crate) BuildingPacketUnion);
 impl BuildingPacketBuilder {
     pub const ITEMS_COUNT: usize = 1;
@@ -3421,6 +3530,11 @@ impl<'r> BuildingPacketUnionReader<'r> {
         match self {
             BuildingPacketUnionReader::BuildingPacketV1(_) => "BuildingPacketV1",
         }
+    }
+}
+impl From<BuildingPacketV1> for BuildingPacket {
+    fn from(value: BuildingPacketV1) -> Self {
+        Self::new_builder().set(value).build()
     }
 }
 #[derive(Clone)]
@@ -3639,7 +3753,7 @@ impl<'r> molecule::prelude::Reader<'r> for SighashAllReader<'r> {
         Ok(())
     }
 }
-#[derive(Debug, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct SighashAllBuilder {
     pub(crate) message: Message,
     pub(crate) seal: Bytes,
@@ -3882,7 +3996,7 @@ impl<'r> molecule::prelude::Reader<'r> for SighashAllOnlyReader<'r> {
         Ok(())
     }
 }
-#[derive(Debug, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct SighashAllOnlyBuilder {
     pub(crate) seal: Bytes,
 }
@@ -4135,7 +4249,7 @@ impl<'r> molecule::prelude::Reader<'r> for SealPairReader<'r> {
         Ok(())
     }
 }
-#[derive(Debug, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct SealPairBuilder {
     pub(crate) script_hash: Byte32,
     pub(crate) seal: Bytes,
@@ -4404,7 +4518,7 @@ impl<'r> molecule::prelude::Reader<'r> for SealPairVecReader<'r> {
         Ok(())
     }
 }
-#[derive(Debug, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct SealPairVecBuilder(pub(crate) Vec<SealPair>);
 impl SealPairVecBuilder {
     pub fn set(mut self, v: Vec<SealPair>) -> Self {
@@ -4519,6 +4633,11 @@ impl<'t: 'r, 'r> ::core::iter::Iterator for SealPairVecReaderIterator<'t, 'r> {
 impl<'t: 'r, 'r> ::core::iter::ExactSizeIterator for SealPairVecReaderIterator<'t, 'r> {
     fn len(&self) -> usize {
         self.2 - self.1
+    }
+}
+impl ::core::iter::FromIterator<SealPair> for SealPairVec {
+    fn from_iter<T: IntoIterator<Item = SealPair>>(iter: T) -> Self {
+        Self::new_builder().extend(iter).build()
     }
 }
 #[derive(Clone)]
@@ -4770,7 +4889,7 @@ impl<'r> molecule::prelude::Reader<'r> for OtxStartReader<'r> {
         Ok(())
     }
 }
-#[derive(Debug, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct OtxStartBuilder {
     pub(crate) start_input_cell: Uint32,
     pub(crate) start_output_cell: Uint32,
@@ -5116,7 +5235,7 @@ impl<'r> molecule::prelude::Reader<'r> for OtxReader<'r> {
         Ok(())
     }
 }
-#[derive(Debug, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct OtxBuilder {
     pub(crate) input_cells: Uint32,
     pub(crate) output_cells: Uint32,
